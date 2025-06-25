@@ -1,5 +1,5 @@
-﻿import React, { useState } from 'react';
-import { Calculator, Zap, Building, Crown, Key, AlertCircle, Info } from 'lucide-react';
+﻿import { useState } from 'react';
+import { Calculator, Zap, Building, Crown, Key, Info } from 'lucide-react';
 
 const PricingCalculator = () => {
   const [usage, setUsage] = useState({
