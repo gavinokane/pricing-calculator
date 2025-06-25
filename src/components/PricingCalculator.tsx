@@ -122,7 +122,7 @@ const PricingCalculator = () => {
       <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-2 mb-4">
           <Calculator className="w-8 h-8 text-blue-600" />
-          <h1 className="text-3xl font-bold text-gray-800">Relevance AI Pricing Calculator</h1>
+          <h1 className="text-3xl font-bold text-gray-800">DoozerAI AI Pricing Calculator</h1>
         </div>
         <p className="text-gray-600">Calculate your monthly costs based on credit usage</p>
         <div className="mt-2 text-sm text-gray-500">
