@@ -384,22 +384,22 @@ const PricingCalculator = () => {
             <h3 className="font-medium text-gray-800 mb-2">Execution Costs</h3>
             <div className="text-sm text-gray-600 space-y-2">
               <div><strong>Fixed Cost per Execution:</strong></div>
-              <div>â€¢ Starter: 4 credits</div>
-              <div>â€¢ Business: 3 credits</div> 
-              <div>â€¢ Enterprise: 2 credits</div>
+              <div>• Starter: 4 credits</div>
+              <div>• Business: 3 credits</div> 
+              <div>• Enterprise: 2 credits</div>
               <div className="pt-2"><strong>Variable Costs:</strong></div>
-              <div>â€¢ LLM calls: Provider cost + 20% markup</div>
-              <div>â€¢ Compute steps: 1 credit each (limited time)</div>
-              <div>â€¢ BYOK: 0 credits for third-party calls</div>
+              <div>• LLM calls: Provider cost + 20% markup</div>
+              <div>• Compute steps: 1 credit each (limited time)</div>
+              <div>• BYOK: 0 credits for third-party calls</div>
             </div>
           </div>
           <div>
             <h3 className="font-medium text-gray-800 mb-2">Additional Credits</h3>
             <div className="text-sm text-gray-600 space-y-2">
               <div>When you exceed your monthly allowance:</div>
-              <div>â€¢ Purchase credit packs: $40 per 10,000 credits</div>
-              <div>â€¢ Or pay overage at $0.004 per credit</div>
-              <div>â€¢ BYOK can reduce overage costs significantly</div>
+              <div>• Purchase credit packs: $40 per 10,000 credits</div>
+              <div>• Or pay overage at $0.004 per credit</div>
+              <div>• BYOK can reduce overage costs significantly</div>
               <div className="pt-2 text-blue-600">
                 <strong>Pro tip:</strong> Bring your own OpenAI/Anthropic API keys to save on variable costs!
               </div>
