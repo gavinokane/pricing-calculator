@@ -27,6 +27,9 @@ jobs:
         npm run build --if-present
         npm run test --if-present
 
+    - name: Add .skipOryxBuild to dist
+      run: echo "" > dist/.skipOryxBuild
+
     - name: 'Deploy to Azure Web App'
       uses: azure/webapps-deploy@v2
       with: 
