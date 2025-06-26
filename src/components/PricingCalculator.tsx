@@ -1,6 +1,7 @@
 ﻿import React, { useState } from 'react';
 import { Calculator, Zap, Building, Crown, Key, Info, Settings } from 'lucide-react';
 import Scenarios from './Scenarios';
+import FeatureComparison from './FeatureComparison';
 
 interface Tier {
   name: string;
@@ -29,7 +30,7 @@ interface TransferredVariables {
 }
 
 const PricingCalculator = () => {
-  type ViewType = "calculator" | "scenarios";
+  type ViewType = "calculator" | "scenarios" | "feature-comparison";
   const [currentView, setCurrentView] = useState<ViewType>("calculator");
   const [transferredVariables, setTransferredVariables] = useState<TransferredVariables>({});
   const [usage, setUsage] = useState({
@@ -221,6 +222,9 @@ const PricingCalculator = () => {
       />
     );
   }
+  if (currentView === "feature-comparison") {
+    return <FeatureComparison tiers={tiers} onBack={() => setCurrentView("calculator")} />;
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
@@ -250,7 +254,7 @@ const PricingCalculator = () => {
           <button
             onClick={() => setCurrentView("scenarios" as ViewType)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-              currentView === ("scenarios" as ViewType)
+              currentView === "scenarios"
                 ? "bg-blue-500 text-white"
                 : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
             }`}
@@ -258,6 +262,18 @@ const PricingCalculator = () => {
           >
             <Settings className="w-4 h-4" />
             Scenarios
+          </button>
+          <button
+            onClick={() => setCurrentView("feature-comparison" as ViewType)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+              currentView === "feature-comparison"
+                ? "bg-blue-500 text-white"
+                : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+            }`}
+            type="button"
+          >
+            <span className="w-4 h-4 flex items-center justify-center">★</span>
+            Feature Comparison
           </button>
         </div>
       </div>
@@ -359,20 +375,7 @@ const PricingCalculator = () => {
               </div>
             </div>
 
-            {/* Workflow Type Details */}
-            <div className="mt-6">
-              <h3 className="text-sm font-medium mb-2 text-gray-800">Selected Workflow Details</h3>
-              {(() => {
-                const selectedWorkflow = workflowTypes[selectedWorkflowIndex];
-                return selectedWorkflow ? (
-                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm">
-                    <div className="font-medium text-blue-900">{selectedWorkflow.name}</div>
-                    <div className="text-blue-700 mt-1">{selectedWorkflow.description}</div>
-                    <div className="text-blue-600 font-medium mt-2">{selectedWorkflow.credits} variable credits per execution</div>
-                  </div>
-                ) : null;
-              })()}
-            </div>
+            
           </div>
         </div>
 
@@ -527,18 +530,7 @@ const PricingCalculator = () => {
               </div>
             </div>
 
-            {/* Features */}
-            <div>
-              <h3 className="text-lg font-medium mb-3 text-gray-800">Plan Features</h3>
-              <div className="grid sm:grid-cols-2 gap-2">
-                {(tiers[selectedTier].features ?? []).map((feature: string, index: number) => (
-                  <div key={index} className="flex items-center gap-2 text-sm text-gray-600">
-                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />
-                    {feature}
-                  </div>
-                ))}
-              </div>
-            </div>
+            
           </div>
         </div>
       </div>
@@ -546,31 +538,48 @@ const PricingCalculator = () => {
       {/* Credit System Explanation */}
       <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
         <h2 className="text-xl font-semibold mb-4 text-gray-800">How Credits Work</h2>
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="text-gray-700 text-sm space-y-4">
           <div>
-            <h3 className="font-medium text-gray-800 mb-2">Execution Costs</h3>
-            <div className="text-sm text-gray-600 space-y-2">
-              <div><strong>Fixed Cost per Execution:</strong></div>
-              <div>• Starter: {tiers.starter.fixedCreditsPerExecution} credits</div>
-              <div>• Business: {tiers.business.fixedCreditsPerExecution} credits</div> 
-              <div>• Enterprise: {tiers.enterprise.fixedCreditsPerExecution} credits</div>
-              <div className="pt-2"><strong>Variable Costs:</strong></div>
-              <div>• LLM calls: Provider cost + 20% markup</div>
-              <div>• Compute steps: 1 credit each (limited time)</div>
-              <div>• BYOK: 0 credits for third-party calls</div>
-            </div>
+            <p>
+              Every month, your plan gives you a set number of included credits. Each time you run a workflow, credits are used up based on the type of workflow and your plan. There are two parts to the credit cost:
+            </p>
+            <ul className="list-disc list-inside ml-4 my-2">
+              <li>
+                <b>Fixed credits per execution:</b> This is a small, set amount that depends on your plan.
+              </li>
+              <li>
+                <b>Variable credits per execution:</b> This depends on the workflow you choose (for example, more complex workflows use more credits).
+              </li>
+            </ul>
+            <p>
+              The more you run workflows, the more credits you use. If you stay within your included credits, you just pay your plan price. If you go over, you’ll pay a little extra for the additional credits you use.
+            </p>
           </div>
           <div>
-            <h3 className="font-medium text-gray-800 mb-2">Additional Credits</h3>
-            <div className="text-sm text-gray-600 space-y-2">
-              <div>When you exceed your monthly allowance:</div>
-              <div>• Purchase credit packs: ${CREDIT_PACK_PRICE} per {CREDIT_PACK_SIZE.toLocaleString()} credits</div>
-              <div>• Or pay overage at ${CREDIT_RATE.toFixed(4)} per credit</div>
-              <div>• BYOK can reduce overage costs by approximately {BYOK_SAVINGS}%</div>
-              <div className="pt-2 text-blue-600">
-                <strong>Pro tip:</strong> Bring your own OpenAI/Anthropic API keys to save on variable costs!
-              </div>
-            </div>
+            <h3 className="font-medium text-gray-800 mb-2">What happens if I go over my included credits?</h3>
+            <p>
+              If you use more credits than your plan includes, you’ll be charged for the extra credits at a low per-credit rate. You can also buy credit packs in advance for a discount.
+            </p>
+          </div>
+          <div>
+            <h3 className="font-medium text-gray-800 mb-2">How can I save with BYOK?</h3>
+            <p>
+              If you bring your own API keys for providers like OpenAI or Anthropic, you’ll save on the variable part of your credit usage. This can reduce your extra credit costs by about {BYOK_SAVINGS}%.
+            </p>
+          </div>
+          <div>
+            <h3 className="font-medium text-gray-800 mb-2">Summary</h3>
+            <ul className="list-disc list-inside ml-4">
+              <li>
+                Each plan includes a monthly credit allowance (Starter: {tiers.starter.credits}, Business: {tiers.business.credits}, Enterprise: {tiers.enterprise.credits}).
+              </li>
+              <li>
+                You only pay extra if you use more credits than your plan includes.
+              </li>
+              <li>
+                Bringing your own API keys can help you save even more on high-volume usage.
+              </li>
+            </ul>
           </div>
         </div>
       </div>

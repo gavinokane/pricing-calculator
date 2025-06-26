@@ -744,6 +744,8 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
           </table>
         </div>
       </div>
+
+
     </div>
   );
 };
