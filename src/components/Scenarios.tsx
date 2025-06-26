@@ -3,6 +3,11 @@ import { Calculator, Settings, Plus, Trash2, RotateCcw, ArrowLeft } from 'lucide
 import { Tier, WorkflowType, Scenario, TransferredVariables } from './types';
 import { SCENARIO_STORAGE_KEY, DEFAULT_TIERS, DEFAULT_WORKFLOW_TYPES } from './constants';
 import { calculateScenario, formatNumber } from './utils';
+import ChartControls from './ChartControls';
+import CostVolumeChart from './CostVolumeChart';
+import EfficiencyCharts from './EfficiencyCharts';
+import ComparisonCharts from './ComparisonCharts';
+import BreakEvenChart from './BreakEvenChart';
 
 interface ScenariosProps {
   onBack?: () => void;
@@ -52,6 +57,12 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
   // Comparison matrix state
   const [comparisonExecutions, setComparisonExecutions] = useState(1000);
   const [comparisonWorkflowIndex, setComparisonWorkflowIndex] = useState(0);
+
+  // Chart controls state
+  const [activeChartSection, setActiveChartSection] = useState('volume');
+  const [chartWorkflowIndex, setChartWorkflowIndex] = useState(0);
+  const [chartFixedExecutions, setChartFixedExecutions] = useState(1000);
+  const [chartMaxExecutions, setChartMaxExecutions] = useState(5000);
 
   const updateTier = (tierKey: string, property: keyof Tier, value: string | number) => {
     setTiers(prev => ({
@@ -344,6 +355,63 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
         </button>
       </div>
 
+      {/* Chart Analysis Section */}
+      <ChartControls
+        workflowTypes={workflowTypes}
+        selectedWorkflowIndex={chartWorkflowIndex}
+        onWorkflowChange={setChartWorkflowIndex}
+        fixedExecutions={chartFixedExecutions}
+        onExecutionsChange={setChartFixedExecutions}
+        maxExecutions={chartMaxExecutions}
+        onMaxExecutionsChange={setChartMaxExecutions}
+        activeChartSection={activeChartSection}
+        onChartSectionChange={setActiveChartSection}
+      />
+
+      {/* Dynamic Chart Rendering */}
+      {activeChartSection === 'volume' && (
+        <CostVolumeChart
+          tiers={tiers}
+          workflowTypes={workflowTypes}
+          selectedWorkflowIndex={chartWorkflowIndex}
+          creditRate={creditRate}
+          byokSavings={byokSavings}
+          maxExecutions={chartMaxExecutions}
+        />
+      )}
+
+      {activeChartSection === 'efficiency' && (
+        <EfficiencyCharts
+          tiers={tiers}
+          workflowTypes={workflowTypes}
+          selectedWorkflowIndex={chartWorkflowIndex}
+          creditRate={creditRate}
+          byokSavings={byokSavings}
+          fixedExecutions={chartFixedExecutions}
+        />
+      )}
+
+      {activeChartSection === 'comparison' && (
+        <ComparisonCharts
+          tiers={tiers}
+          workflowTypes={workflowTypes}
+          creditRate={creditRate}
+          byokSavings={byokSavings}
+          fixedExecutions={chartFixedExecutions}
+        />
+      )}
+
+      {activeChartSection === 'breakeven' && (
+        <BreakEvenChart
+          tiers={tiers}
+          workflowTypes={workflowTypes}
+          selectedWorkflowIndex={chartWorkflowIndex}
+          creditRate={creditRate}
+          byokSavings={byokSavings}
+          maxExecutions={chartMaxExecutions}
+        />
+      )}
+
       {/* Scenario Testing */}
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
         <h2 className="text-xl font-semibold mb-4 text-gray-800">Scenario Testing</h2>
@@ -416,15 +484,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
                 <th className="text-left p-3 border-b font-semibold">BYOK</th>
                 <th className="text-left p-3 border-b font-semibold">Credits Needed</th>
                 <th className="text-left p-3 border-b font-semibold">Overage Credits</th>
-                <th className="text-left p-3 border-b font-semibold flex items-center gap-1">
-                  Total Cost
-                  <span title="Total Cost = Base Price + (max(0, (Executions × (Fixed Credits/Execution + Workflow Credits)) - Included Credits) × Credit Rate)&#10;If BYOK: Overage credits are reduced by BYOK savings.">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="inline w-4 h-4 text-blue-500 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
-                      <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
-                    </svg>
-                  </span>
-                </th>
+                <th className="text-left p-3 border-b font-semibold">Total Cost</th>
                 <th className="text-left p-3 border-b font-semibold">Cost/Execution</th>
                 <th className="text-left p-3 border-b font-semibold">Actions</th>
               </tr>
@@ -438,63 +498,10 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
                   <td className="p-3 border-b">{workflowTypes[scenario.workflowIndex]?.credits ?? ''}</td>
                   <td className="p-3 border-b">{tiers[scenario.tierKey]?.name}</td>
                   <td className="p-3 border-b">{scenario.hasByok ? '✅' : '❌'}</td>
-                  <td className="p-3 border-b">
-                    {formatNumber(scenario.totalCreditsNeeded)}
-                    <span
-                      title={
-                        `Credits Needed = Executions (${scenario.executions}) × (Fixed Credits/Execution (${tiers[scenario.tierKey]?.fixedCreditsPerExecution}) + Workflow Credits (${workflowTypes[scenario.workflowIndex]?.credits})) = ${scenario.totalCreditsNeeded}`
-                      }
-                      style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="inline w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
-                        <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
-                      </svg>
-                    </span>
-                  </td>
-                  <td className="p-3 border-b">
-                    {formatNumber(scenario.additionalCreditsNeeded)}
-                    <span
-                      title={
-                        `Overage Credits = max(0, Credits Needed (${scenario.totalCreditsNeeded}) - Included Credits (${tiers[scenario.tierKey]?.credits})) = ${scenario.additionalCreditsNeeded}`
-                      }
-                      style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="inline w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
-                        <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
-                      </svg>
-                    </span>
-                  </td>
-                  <td className="p-3 border-b bg-yellow-100 font-semibold">
-                    ${scenario.totalCost.toFixed(2)}
-                    <span
-                      title={
-                        `Total Cost = Base Price (${tiers[scenario.tierKey]?.basePrice}) + Overage Credits (${scenario.additionalCreditsNeeded}) × Credit Rate (${creditRate}) = ${scenario.totalCost.toFixed(2)}`
-                        + (scenario.hasByok ? `\n(BYOK applied: Overage credits reduced by ${byokSavings}% of variable credits)` : "")
-                      }
-                      style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="inline w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
-                        <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
-                      </svg>
-                    </span>
-                  </td>
-                  <td className="p-3 border-b">
-                    ${scenario.costPerExecution.toFixed(3)}
-                    <span
-                      title={
-                        `Cost/Execution = Total Cost (${scenario.totalCost.toFixed(2)}) / Executions (${scenario.executions}) = ${scenario.costPerExecution.toFixed(3)}`
-                      }
-                      style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="inline w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
-                        <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
-                      </svg>
-                    </span>
-                  </td>
+                  <td className="p-3 border-b">{formatNumber(scenario.totalCreditsNeeded)}</td>
+                  <td className="p-3 border-b">{formatNumber(scenario.additionalCreditsNeeded)}</td>
+                  <td className="p-3 border-b bg-yellow-100 font-semibold">${scenario.totalCost.toFixed(2)}</td>
+                  <td className="p-3 border-b">${scenario.costPerExecution.toFixed(3)}</td>
                   <td className="p-3 border-b">
                     <button
                       onClick={() => removeScenario(index)}
@@ -583,90 +590,12 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
                       <strong>{tier.name}</strong>
                     </td>
                     <td className="p-3 border-b">${tier.basePrice}</td>
-                    <td className="p-3 border-b">
-                      {formatNumber(regular.totalCreditsNeeded)}
-                      <span
-                        title={
-                          `Credits Needed = Executions (${comparisonExecutions}) × (Fixed Credits/Execution (${tier.fixedCreditsPerExecution}) + Workflow Credits (${workflowTypes[comparisonWorkflowIndex]?.credits})) = ${regular.totalCreditsNeeded}`
-                        }
-                        style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="inline w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
-                          <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
-                        </svg>
-                      </span>
-                    </td>
-                    <td className="p-3 border-b">
-                      {formatNumber(regular.additionalCreditsNeeded)}
-                      <span
-                        title={
-                          `Overage Credits = max(0, Credits Needed (${regular.totalCreditsNeeded}) - Included Credits (${tier.credits})) = ${regular.additionalCreditsNeeded}`
-                        }
-                        style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="inline w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
-                          <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
-                        </svg>
-                      </span>
-                    </td>
-                    <td className="p-3 border-b">
-                      ${regular.totalCost.toFixed(2)}
-                      <span
-                        title={
-                          `Total Cost = Base Price (${tier.basePrice}) + Overage Credits (${regular.additionalCreditsNeeded}) × Credit Rate (${creditRate}) = ${regular.totalCost.toFixed(2)}`
-                        }
-                        style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="inline w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
-                          <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
-                        </svg>
-                      </span>
-                    </td>
-                    <td className="p-3 border-b">
-                      ${regular.costPerExecution.toFixed(3)}
-                      <span
-                        title={
-                          `Cost/Execution = Total Cost (${regular.totalCost.toFixed(2)}) / Executions (${comparisonExecutions}) = ${regular.costPerExecution.toFixed(3)}`
-                        }
-                        style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="inline w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
-                          <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
-                        </svg>
-                      </span>
-                    </td>
-                    <td className="p-3 border-b">
-                      ${byok.totalCost.toFixed(2)}
-                      <span
-                        title={
-                          `Total Cost (BYOK) = Base Price (${tier.basePrice}) + Overage Credits (BYOK) (${byok.additionalCreditsAfterByok}) × Credit Rate (${creditRate}) = ${byok.totalCost.toFixed(2)}\n(BYOK applied: Overage credits reduced by ${byokSavings}% of variable credits)`
-                        }
-                        style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="inline w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
-                          <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
-                        </svg>
-                      </span>
-                    </td>
-                    <td className="p-3 border-b">
-                      ${byok.costPerExecution.toFixed(3)}
-                      <span
-                        title={
-                          `Cost/Execution (BYOK) = Total Cost (BYOK) (${byok.totalCost.toFixed(2)}) / Executions (${comparisonExecutions}) = ${byok.costPerExecution.toFixed(3)}`
-                        }
-                        style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="inline w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
-                          <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
-                        </svg>
-                      </span>
-                    </td>
+                    <td className="p-3 border-b">{formatNumber(regular.totalCreditsNeeded)}</td>
+                    <td className="p-3 border-b">{formatNumber(regular.additionalCreditsNeeded)}</td>
+                    <td className="p-3 border-b">${regular.totalCost.toFixed(2)}</td>
+                    <td className="p-3 border-b">${regular.costPerExecution.toFixed(3)}</td>
+                    <td className="p-3 border-b">${byok.totalCost.toFixed(2)}</td>
+                    <td className="p-3 border-b">${byok.costPerExecution.toFixed(3)}</td>
                   </tr>
                 );
               })}
