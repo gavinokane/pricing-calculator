@@ -534,7 +534,20 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
                       </svg>
                     </span>
                   </td>
-                  <td className="p-3 border-b">{formatNumber(scenario.additionalCreditsNeeded)}</td>
+                  <td className="p-3 border-b">
+                    {formatNumber(scenario.additionalCreditsNeeded)}
+                    <span
+                      title={
+                        `Overage Credits = max(0, Credits Needed (${scenario.totalCreditsNeeded}) - Included Credits (${tiers[scenario.tierKey]?.credits})) = ${scenario.additionalCreditsNeeded}`
+                      }
+                      style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="inline w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
+                        <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
+                      </svg>
+                    </span>
+                  </td>
                   <td className="p-3 border-b bg-yellow-100 font-semibold">
                     ${scenario.totalCost.toFixed(2)}
                     <span
@@ -634,12 +647,90 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
                       <strong>{tier.name}</strong>
                     </td>
                     <td className="p-3 border-b">${tier.basePrice}</td>
-                    <td className="p-3 border-b">{formatNumber(regular.totalCreditsNeeded)}</td>
-                    <td className="p-3 border-b">{formatNumber(regular.additionalCreditsNeeded)}</td>
-                    <td className="p-3 border-b">${regular.totalCost.toFixed(2)}</td>
-                    <td className="p-3 border-b">${regular.costPerExecution.toFixed(3)}</td>
-                    <td className="p-3 border-b">${byok.totalCost.toFixed(2)}</td>
-                    <td className="p-3 border-b">${byok.costPerExecution.toFixed(3)}</td>
+                    <td className="p-3 border-b">
+                      {formatNumber(regular.totalCreditsNeeded)}
+                      <span
+                        title={
+                          `Credits Needed = Executions (${comparisonExecutions}) × (Fixed Credits/Execution (${tier.fixedCreditsPerExecution}) + Workflow Credits (${workflowTypes[comparisonWorkflowIndex]?.credits})) = ${regular.totalCreditsNeeded}`
+                        }
+                        style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="inline w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
+                          <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
+                        </svg>
+                      </span>
+                    </td>
+                    <td className="p-3 border-b">
+                      {formatNumber(regular.additionalCreditsNeeded)}
+                      <span
+                        title={
+                          `Overage Credits = max(0, Credits Needed (${regular.totalCreditsNeeded}) - Included Credits (${tier.credits})) = ${regular.additionalCreditsNeeded}`
+                        }
+                        style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="inline w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
+                          <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
+                        </svg>
+                      </span>
+                    </td>
+                    <td className="p-3 border-b">
+                      ${regular.totalCost.toFixed(2)}
+                      <span
+                        title={
+                          `Total Cost = Base Price ($${tier.basePrice}) + Overage Credits (${regular.additionalCreditsNeeded}) × Credit Rate ($${creditRate}) = $${regular.totalCost.toFixed(2)}`
+                        }
+                        style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="inline w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
+                          <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
+                        </svg>
+                      </span>
+                    </td>
+                    <td className="p-3 border-b">
+                      ${regular.costPerExecution.toFixed(3)}
+                      <span
+                        title={
+                          `Cost/Execution = Total Cost ($${regular.totalCost.toFixed(2)}) / Executions (${comparisonExecutions}) = $${regular.costPerExecution.toFixed(3)}`
+                        }
+                        style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="inline w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
+                          <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
+                        </svg>
+                      </span>
+                    </td>
+                    <td className="p-3 border-b">
+                      ${byok.totalCost.toFixed(2)}
+                      <span
+                        title={
+                          `Total Cost (BYOK) = Base Price ($${tier.basePrice}) + Overage Credits (BYOK) (${byok.additionalCreditsAfterByok}) × Credit Rate ($${creditRate}) = $${byok.totalCost.toFixed(2)}\n(BYOK applied: Overage credits reduced by ${byokSavings}% of variable credits)`
+                        }
+                        style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="inline w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
+                          <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
+                        </svg>
+                      </span>
+                    </td>
+                    <td className="p-3 border-b">
+                      ${byok.costPerExecution.toFixed(3)}
+                      <span
+                        title={
+                          `Cost/Execution (BYOK) = Total Cost (BYOK) ($${byok.totalCost.toFixed(2)}) / Executions (${comparisonExecutions}) = $${byok.costPerExecution.toFixed(3)}`
+                        }
+                        style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="inline w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
+                          <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
+                        </svg>
+                      </span>
+                    </td>
                   </tr>
                 );
               })}
