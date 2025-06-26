@@ -169,7 +169,7 @@ const PricingCalculator = () => {
     const currentTier = tiers[selectedTier as keyof typeof tiers];
     const workflow = workflowTypes[selectedWorkflowIndex] ?? workflowTypes[0];
     const variableCreditsPerExecution = workflow.credits;
-    const totalCreditsPerExecution = currentTier.fixedCreditsPerExecution + variableCreditsPerExecution;
+    const totalCreditsPerExecution = Number(currentTier.fixedCreditsPerExecution) + Number(variableCreditsPerExecution);
     const totalCreditsNeeded = usage.executions * totalCreditsPerExecution;
     const includedCredits = currentTier.credits;
     
@@ -509,7 +509,7 @@ const PricingCalculator = () => {
                 {Object.entries(tiers).map(([tierKey, tier]: [string, Tier]) => {
                   const workflow = workflowTypes[selectedWorkflowIndex] ?? workflowTypes[0];
                   const variableCreditsPerExecution = workflow.credits;
-                  const tierCreditsPerExecution = tier.fixedCreditsPerExecution + variableCreditsPerExecution;
+                  const tierCreditsPerExecution = Number(tier.fixedCreditsPerExecution) + Number(variableCreditsPerExecution);
                   const tierCostPerExecution = tierCreditsPerExecution * CREDIT_RATE;
                   const isCurrentTier = tierKey === selectedTier;
                   

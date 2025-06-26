@@ -366,7 +366,7 @@
             const tier = tiers[tierKey];
             const workflow = workflowTypes[workflowIndex];
             
-            const totalCreditsPerExecution = tier.fixedCreditsPerExecution + workflow.credits;
+            const totalCreditsPerExecution = Number(tier.fixedCreditsPerExecution) + Number(workflow.credits);
             const totalCreditsNeeded = executions * totalCreditsPerExecution;
             const includedCredits = tier.credits;
             
@@ -380,7 +380,7 @@
             }
             
             const additionalCreditCost = additionalCreditsNeeded * creditRate;
-            const totalCost = tier.basePrice + additionalCreditCost;
+            const totalCost = Number(tier.basePrice) + Number(additionalCreditCost);
             const costPerExecution = totalCost / executions;
             
             return {
