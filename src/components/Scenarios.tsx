@@ -1,50 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator, Settings, Plus, Trash2, RotateCcw, ArrowLeft } from 'lucide-react';
-
-interface Tier {
-  name: string;
-  basePrice: number;
-  credits: number;
-  fixedCreditsPerExecution: number;
-}
-
-interface WorkflowType {
-  name: string;
-  credits: number;
-}
-
-interface Scenario {
-  id: number;
-  executions: number;
-  workflowIndex: number;
-  tierKey: string;
-  hasByok: boolean;
-  totalCreditsPerExecution: number;
-  totalCreditsNeeded: number;
-  includedCredits: number;
-  additionalCreditsNeeded: number;
-  additionalCreditsAfterByok: number;
-  additionalCreditCost: number;
-  totalCost: number;
-  costPerExecution: number;
-}
-
-interface TransferredVariables {
-  creditRate?: number;
-  creditPackSize?: number;
-  creditPackPrice?: number;
-  byokSavings?: number;
-  tiers?: Record<string, Tier>;
-  workflowTypes?: WorkflowType[];
-}
+import { Tier, WorkflowType, Scenario, TransferredVariables } from './types';
+import { SCENARIO_STORAGE_KEY, DEFAULT_TIERS, DEFAULT_WORKFLOW_TYPES } from './constants';
+import { calculateScenario, formatNumber } from './utils';
 
 interface ScenariosProps {
   onBack?: () => void;
   onTransferVariables?: (variables: TransferredVariables) => void;
   initialVariables?: TransferredVariables;
 }
-
-const SCENARIO_STORAGE_KEY = "doozerScenarioState";
 
 const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, initialVariables }) => {
   // Load persisted state if available
@@ -58,35 +22,21 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
   })();
 
   const [creditRate, setCreditRate] = useState(
-    persisted?.creditRate ?? initialVariables?.creditRate ?? 0.004
+    persisted?.creditRate ?? initialVariables?.creditRate ?? 0.01
   );
   const [creditPackSize, setCreditPackSize] = useState(
-    persisted?.creditPackSize ?? initialVariables?.creditPackSize ?? 10000
+    persisted?.creditPackSize ?? initialVariables?.creditPackSize ?? 50000
   );
-  // const [creditPackPrice, setCreditPackPrice] = useState(initialVariables?.creditPackPrice ?? 40);
   const [byokSavings, setByokSavings] = useState(
     persisted?.byokSavings ?? initialVariables?.byokSavings ?? 60
   );
 
   const [tiers, setTiers] = useState<Record<string, Tier>>(
-    persisted?.tiers ?? initialVariables?.tiers ?? {
-      starter: { name: 'Starter', basePrice: 50, credits: 1000, fixedCreditsPerExecution: 4 },
-      business: { name: 'Business', basePrice: 400, credits: 200000, fixedCreditsPerExecution: 3 },
-      enterprise: { name: 'Enterprise', basePrice: 1000, credits: 300000, fixedCreditsPerExecution: 2 }
-    }
+    persisted?.tiers ?? initialVariables?.tiers ?? DEFAULT_TIERS
   );
 
   const [workflowTypes, setWorkflowTypes] = useState<WorkflowType[]>(
-    persisted?.workflowTypes ?? initialVariables?.workflowTypes ?? [
-      { name: 'Simple Email Classifier', credits: 10 },
-      { name: 'Basic Data Processing', credits: 15 },
-      { name: 'Content Summarization', credits: 25 },
-      { name: 'Classifier Sharepoint+BOX', credits: 30 },
-      { name: 'Report Generation', credits: 40 },
-      { name: 'Research & Analysis', credits: 50 },
-      { name: 'Complex Multi-Step Agent', credits: 100 },
-      { name: 'Advanced Multi-Agent System', credits: 200 }
-    ]
+    persisted?.workflowTypes ?? initialVariables?.workflowTypes ?? DEFAULT_WORKFLOW_TYPES
   );
 
   const [scenarios, setScenarios] = useState<Scenario[]>(
@@ -103,52 +53,6 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
   const [comparisonExecutions, setComparisonExecutions] = useState(1000);
   const [comparisonWorkflowIndex, setComparisonWorkflowIndex] = useState(0);
 
-  const calculateScenario = (executions: number, workflowIndex: number, tierKey: string, hasByokFlag: boolean) => {
-    const tier = tiers[tierKey];
-    const workflow = workflowTypes[workflowIndex];
-    
-    if (!tier || !workflow) {
-      return {
-        totalCreditsPerExecution: 0,
-        totalCreditsNeeded: 0,
-        includedCredits: 0,
-        additionalCreditsNeeded: 0,
-        additionalCreditsAfterByok: 0,
-        additionalCreditCost: 0,
-        totalCost: 0,
-        costPerExecution: 0
-      };
-    }
-
-    const totalCreditsPerExecution = Number(tier.fixedCreditsPerExecution) + Number(workflow.credits);
-    const totalCreditsNeeded = executions * totalCreditsPerExecution;
-    const includedCredits = tier.credits;
-    
-    let additionalCreditsNeeded = Math.max(0, totalCreditsNeeded - includedCredits);
-    
-    // Apply BYOK savings (only on variable costs)
-    if (hasByokFlag && additionalCreditsNeeded > 0) {
-      const variableCreditsInOverage = Math.min(additionalCreditsNeeded, executions * workflow.credits);
-      const estimatedSavings = variableCreditsInOverage * (byokSavings / 100);
-      additionalCreditsNeeded = Math.max(0, additionalCreditsNeeded - estimatedSavings);
-    }
-    
-    const additionalCreditCost = additionalCreditsNeeded * creditRate;
-    const totalCost = tier.basePrice + additionalCreditCost;
-    const costPerExecution = totalCost / executions;
-    
-    return {
-      totalCreditsPerExecution,
-      totalCreditsNeeded,
-      includedCredits,
-      additionalCreditsNeeded: Math.max(0, totalCreditsNeeded - includedCredits),
-      additionalCreditsAfterByok: additionalCreditsNeeded,
-      additionalCreditCost,
-      totalCost,
-      costPerExecution
-    };
-  };
-
   const updateTier = (tierKey: string, property: keyof Tier, value: string | number) => {
     setTiers(prev => ({
       ...prev,
@@ -160,11 +64,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
   };
 
   const resetTier = (tierKey: string) => {
-    const defaults = {
-      starter: { name: 'Starter', basePrice: 50, credits: 1000, fixedCreditsPerExecution: 4 },
-      business: { name: 'Business', basePrice: 400, credits: 200000, fixedCreditsPerExecution: 3 },
-      enterprise: { name: 'Enterprise', basePrice: 1000, credits: 300000, fixedCreditsPerExecution: 2 }
-    };
+    const defaults = DEFAULT_TIERS;
     setTiers(prev => ({
       ...prev,
       [tierKey]: { ...defaults[tierKey as keyof typeof defaults] }
@@ -193,7 +93,16 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
   };
 
   const addScenario = () => {
-    const calculation = calculateScenario(monthlyExecutions, selectedWorkflowIndex, selectedTier, hasByok);
+    const calculation = calculateScenario(
+      monthlyExecutions, 
+      selectedWorkflowIndex, 
+      selectedTier, 
+      hasByok,
+      tiers,
+      workflowTypes,
+      creditRate,
+      byokSavings
+    );
     
     const scenario: Scenario = {
       id: Date.now(),
@@ -215,7 +124,16 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
   useEffect(() => {
     setScenarios(prev => prev.map(scenario => ({
       ...scenario,
-      ...calculateScenario(scenario.executions, scenario.workflowIndex, scenario.tierKey, scenario.hasByok)
+      ...calculateScenario(
+        scenario.executions, 
+        scenario.workflowIndex, 
+        scenario.tierKey, 
+        scenario.hasByok,
+        tiers,
+        workflowTypes,
+        creditRate,
+        byokSavings
+      )
     })));
   }, [creditRate, creditPackSize, byokSavings, tiers, workflowTypes]);
 
@@ -234,10 +152,6 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
     } catch {}
   }, [creditRate, creditPackSize, byokSavings, tiers, workflowTypes, scenarios]);
 
-  const formatNumber = (num: number) => {
-    return num.toLocaleString();
-  };
-
   return (
     <div className="max-w-7xl mx-auto p-6 bg-gray-50 min-h-screen">
       <div className="text-center mb-8">
@@ -255,7 +169,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
           <h1 className="text-3xl font-bold text-gray-800">Doozer AI Pricing Scenario Analyzer</h1>
         </div>
         {onTransferVariables && (
-          <div className="flex justify-start mb-4" style={{ marginLeft: 0 }}>
+          <div className="flex justify-center mb-4">
             <button
               onClick={() => onTransferVariables({
                 creditRate,
@@ -274,7 +188,6 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
         )}
         <p className="text-gray-600">Test different pricing scenarios and configurations</p>
       </div>
-
 
       {/* Global Variables */}
       <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
@@ -324,7 +237,6 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
             />
           </div>
         </div>
-        {/* Transfer button moved to header */}
       </div>
 
       {/* Tier Configuration */}
@@ -337,7 +249,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
                 <th className="text-left p-3 border-b font-semibold">Tier</th>
                 <th className="text-left p-3 border-b font-semibold">Base Price ($)</th>
                 <th className="text-left p-3 border-b font-semibold">Included Credits</th>
-                <th className="text-left p-3 border-b font-semibold">Price per Unit</th>
+                <th className="text-left p-3 border-b font-semibold">Price per Credit</th>
                 <th className="text-left p-3 border-b font-semibold">Fixed Credits/Execution</th>
                 <th className="text-left p-3 border-b font-semibold">Actions</th>
               </tr>
@@ -361,13 +273,13 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
                       type="number"
                       step="1000"
                       value={tier.credits}
-                      onChange={(e) => updateTier(key, 'credits', e.target.value)}
+                      onChange={(e) => updateTier(key, 'credits', parseInt(e.target.value) || 0)}
                       className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                     />
                   </td>
                   <td className="p-3 border-b text-center">
                     {tier.credits > 0
-                      ? `$${(tier.basePrice / tier.credits).toFixed(4)}`
+                      ? `${(tier.basePrice / tier.credits).toFixed(4)}`
                       : '—'}
                   </td>
                   <td className="p-3 border-b">
@@ -375,7 +287,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
                       type="number"
                       step="0.1"
                       value={tier.fixedCreditsPerExecution}
-                      onChange={(e) => updateTier(key, 'fixedCreditsPerExecution', e.target.value)}
+                      onChange={(e) => updateTier(key, 'fixedCreditsPerExecution', parseFloat(e.target.value) || 0)}
                       className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                     />
                   </td>
@@ -558,7 +470,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
                     ${scenario.totalCost.toFixed(2)}
                     <span
                       title={
-                        `Total Cost = Base Price ($${tiers[scenario.tierKey]?.basePrice}) + Overage Credits (${scenario.additionalCreditsNeeded}) × Credit Rate ($${creditRate}) = $${scenario.totalCost.toFixed(2)}`
+                        `Total Cost = Base Price (${tiers[scenario.tierKey]?.basePrice}) + Overage Credits (${scenario.additionalCreditsNeeded}) × Credit Rate (${creditRate}) = ${scenario.totalCost.toFixed(2)}`
                         + (scenario.hasByok ? `\n(BYOK applied: Overage credits reduced by ${byokSavings}% of variable credits)` : "")
                       }
                       style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
@@ -573,7 +485,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
                     ${scenario.costPerExecution.toFixed(3)}
                     <span
                       title={
-                        `Cost/Execution = Total Cost ($${scenario.totalCost.toFixed(2)}) / Executions (${scenario.executions}) = $${scenario.costPerExecution.toFixed(3)}`
+                        `Cost/Execution = Total Cost (${scenario.totalCost.toFixed(2)}) / Executions (${scenario.executions}) = ${scenario.costPerExecution.toFixed(3)}`
                       }
                       style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
                     >
@@ -644,8 +556,26 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
             </thead>
             <tbody>
               {Object.entries(tiers).map(([tierKey, tier]) => {
-                const regular = calculateScenario(comparisonExecutions, comparisonWorkflowIndex, tierKey, false);
-                const byok = calculateScenario(comparisonExecutions, comparisonWorkflowIndex, tierKey, true);
+                const regular = calculateScenario(
+                  comparisonExecutions, 
+                  comparisonWorkflowIndex, 
+                  tierKey, 
+                  false,
+                  tiers,
+                  workflowTypes,
+                  creditRate,
+                  byokSavings
+                );
+                const byok = calculateScenario(
+                  comparisonExecutions, 
+                  comparisonWorkflowIndex, 
+                  tierKey, 
+                  true,
+                  tiers,
+                  workflowTypes,
+                  creditRate,
+                  byokSavings
+                );
                 
                 return (
                   <tr key={tierKey} className={`${tierKey === 'starter' ? 'bg-blue-50' : tierKey === 'business' ? 'bg-purple-50' : 'bg-amber-50'}`}>
@@ -685,7 +615,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
                       ${regular.totalCost.toFixed(2)}
                       <span
                         title={
-                          `Total Cost = Base Price ($${tier.basePrice}) + Overage Credits (${regular.additionalCreditsNeeded}) × Credit Rate ($${creditRate}) = $${regular.totalCost.toFixed(2)}`
+                          `Total Cost = Base Price (${tier.basePrice}) + Overage Credits (${regular.additionalCreditsNeeded}) × Credit Rate (${creditRate}) = ${regular.totalCost.toFixed(2)}`
                         }
                         style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
                       >
@@ -699,7 +629,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
                       ${regular.costPerExecution.toFixed(3)}
                       <span
                         title={
-                          `Cost/Execution = Total Cost ($${regular.totalCost.toFixed(2)}) / Executions (${comparisonExecutions}) = $${regular.costPerExecution.toFixed(3)}`
+                          `Cost/Execution = Total Cost (${regular.totalCost.toFixed(2)}) / Executions (${comparisonExecutions}) = ${regular.costPerExecution.toFixed(3)}`
                         }
                         style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
                       >
@@ -713,7 +643,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
                       ${byok.totalCost.toFixed(2)}
                       <span
                         title={
-                          `Total Cost (BYOK) = Base Price ($${tier.basePrice}) + Overage Credits (BYOK) (${byok.additionalCreditsAfterByok}) × Credit Rate ($${creditRate}) = $${byok.totalCost.toFixed(2)}\n(BYOK applied: Overage credits reduced by ${byokSavings}% of variable credits)`
+                          `Total Cost (BYOK) = Base Price (${tier.basePrice}) + Overage Credits (BYOK) (${byok.additionalCreditsAfterByok}) × Credit Rate (${creditRate}) = ${byok.totalCost.toFixed(2)}\n(BYOK applied: Overage credits reduced by ${byokSavings}% of variable credits)`
                         }
                         style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
                       >
@@ -727,7 +657,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
                       ${byok.costPerExecution.toFixed(3)}
                       <span
                         title={
-                          `Cost/Execution (BYOK) = Total Cost (BYOK) ($${byok.totalCost.toFixed(2)}) / Executions (${comparisonExecutions}) = $${byok.costPerExecution.toFixed(3)}`
+                          `Cost/Execution (BYOK) = Total Cost (BYOK) (${byok.totalCost.toFixed(2)}) / Executions (${comparisonExecutions}) = ${byok.costPerExecution.toFixed(3)}`
                         }
                         style={{ display: "inline-flex", alignItems: "center", cursor: "pointer", marginLeft: "0.25rem" }}
                       >
@@ -744,8 +674,6 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
           </table>
         </div>
       </div>
-
-
     </div>
   );
 };

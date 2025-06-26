@@ -1,36 +1,20 @@
 ﻿import React, { useState } from 'react';
 import { Calculator, Zap, Building, Crown, Key, Info, Settings } from 'lucide-react';
+import { Tier, WorkflowType, TransferredVariables, ViewType } from './types';
+import { 
+  DEFAULT_CREDIT_RATE, 
+  DEFAULT_CREDIT_PACK_SIZE, 
+  DEFAULT_CREDIT_PACK_PRICE, 
+  DEFAULT_BYOK_SAVINGS,
+  DEFAULT_TIERS,
+  DEFAULT_WORKFLOW_TYPES,
+  DEFAULT_TIER_META
+} from './constants';
+import { formatNumber, calculateCreditUsage } from './utils';
 import Scenarios from './Scenarios';
 import FeatureComparison from './FeatureComparison';
 
-interface Tier {
-  name: string;
-  basePrice: number;
-  credits: number;
-  fixedCreditsPerExecution: number;
-  color?: string;
-  icon?: React.ReactNode;
-  workspace?: string;
-  features?: string[];
-}
-
-interface WorkflowType {
-  name: string;
-  credits: number;
-  description?: string;
-}
-
-interface TransferredVariables {
-  creditRate?: number;
-  creditPackSize?: number;
-  creditPackPrice?: number;
-  byokSavings?: number;
-  tiers?: Record<string, Tier>;
-  workflowTypes?: WorkflowType[];
-}
-
 const PricingCalculator = () => {
-  type ViewType = "calculator" | "scenarios" | "feature-comparison";
   const [currentView, setCurrentView] = useState<ViewType>("calculator");
   const [transferredVariables, setTransferredVariables] = useState<TransferredVariables>({});
   const [usage, setUsage] = useState({
@@ -38,173 +22,39 @@ const PricingCalculator = () => {
     hasApiKeys: false
   });
   const [selectedWorkflowIndex, setSelectedWorkflowIndex] = useState(0);
-
   const [selectedTier, setSelectedTier] = useState<'starter' | 'business' | 'enterprise'>('starter');
 
   // Credit pricing (use transferred variables if present)
-  const CREDIT_RATE = transferredVariables.creditRate ?? 0.01; // $0.004 per credit
-  const CREDIT_PACK_SIZE = transferredVariables.creditPackSize ?? 50000;
-  const CREDIT_PACK_PRICE = transferredVariables.creditPackPrice ?? 50;
-  const BYOK_SAVINGS = transferredVariables.byokSavings ?? 60;
+  const CREDIT_RATE = transferredVariables.creditRate ?? DEFAULT_CREDIT_RATE;
+  const CREDIT_PACK_SIZE = transferredVariables.creditPackSize ?? DEFAULT_CREDIT_PACK_SIZE;
+  const CREDIT_PACK_PRICE = transferredVariables.creditPackPrice ?? DEFAULT_CREDIT_PACK_PRICE;
+  const BYOK_SAVINGS = transferredVariables.byokSavings ?? DEFAULT_BYOK_SAVINGS;
 
   // Pricing tiers configuration (use transferred if present)
-  // Ensure color and icon are always present for each tier, even if transferred
-  const defaultTierMeta: Record<string, { color: string; icon: React.ReactNode }> = {
-    starter: { color: 'bg-blue-500', icon: <Zap className="w-5 h-5" /> },
-    business: { color: 'bg-purple-500', icon: <Building className="w-5 h-5" /> },
-    enterprise: { color: 'bg-amber-500', icon: <Crown className="w-5 h-5" /> }
-  };
   const tiers: Record<string, Tier> = Object.fromEntries(
-    Object.entries(transferredVariables.tiers ?? {
-      starter: {
-        name: 'Starter',
-        basePrice: 50,
-        credits: 1000,
-        fixedCreditsPerExecution: 10,
-        workspace: 'Shared',
-        features: [
-          '1,000 credits included',
-          '4 credits fixed cost per execution',
-          'Shared workspace',
-          'Pre-built agent templates',
-          'Basic workflow builder',
-          'Standard integrations',
-          'Community support',
-          'Usage analytics'
-        ]
-      },
-      business: {
-        name: 'Business',
-        basePrice: 400,
-        credits: 50000,
-        fixedCreditsPerExecution: 5,
-        workspace: 'Private',
-        features: [
-          '200,000 credits included',
-          '3 credits fixed cost per execution',
-          'Private workspace',
-          'Custom agent development',
-          'Advanced workflow automation',
-          'Premium integrations',
-          'Priority support',
-          'Advanced analytics',
-          'Team collaboration',
-          'API access'
-        ]
-      },
-      enterprise: {
-        name: 'Enterprise',
-        basePrice: 1000,
-        credits: 100000,
-        fixedCreditsPerExecution: 0.5,
-        workspace: 'Private + SSO',
-        features: [
-          '300,000 credits included',
-          '2 credits fixed cost per execution',
-          'Private workspace with SSO',
-          'Role-based access control (RBAC)',
-          'Unlimited custom agents',
-          'Enterprise workflow engine',
-          'Custom integrations',
-          'Dedicated support with SLA',
-          'Custom analytics & reporting',
-          'Advanced security features',
-          'On-premise deployment option'
-        ]
-      }
-    }).map(([key, tier]) => [
+    Object.entries(transferredVariables.tiers ?? DEFAULT_TIERS).map(([key, tier]) => [
       key,
       {
         ...tier,
-        color: tier.color ?? defaultTierMeta[key]?.color,
-        icon: tier.icon ?? defaultTierMeta[key]?.icon
+        color: tier.color ?? DEFAULT_TIER_META[key]?.color,
+        icon: tier.icon ?? DEFAULT_TIER_META[key]?.icon
       }
     ])
   );
 
   // Workflow types with variable credit costs (use transferred if present)
-  const workflowTypes: WorkflowType[] = transferredVariables.workflowTypes ?? [
-    { 
-      name: 'Simple Email Classifier', 
-      credits: 10, 
-      description: '1 LLM call (classification), 2 compute steps (routing, logging)' 
-    },
-    { 
-      name: 'Basic Data Processing', 
-      credits: 15, 
-      description: '2 LLM calls (validation, formatting), 5 compute steps' 
-    },
-    { 
-      name: 'Content Summarization', 
-      credits: 25, 
-      description: '1 large LLM call (summarization), 3 compute steps' 
-    },
-    { 
-      name: 'Classifier Sharepoint+BOX', 
-      credits: 30, 
-      description: '2 LLM call (classification), 3 compute steps (routing, logging)' 
-    },
-    { 
-      name: 'Report Generation', 
-      credits: 40, 
-      description: '2 LLM calls (research, writing), 5 compute steps' 
-    },
-    { 
-      name: 'Research & Analysis', 
-      credits: 50, 
-      description: '4 LLM calls (research, analysis, synthesis), 8 compute steps' 
-    },
-    { 
-      name: 'Complex Multi-Step Agent', 
-      credits: 100, 
-      description: '6 LLM calls (planning, execution, validation), 10 compute steps' 
-    },
-    { 
-      name: 'Advanced Multi-Agent System', 
-      credits: 200, 
-      description: '8+ LLM calls (coordination, execution, review), 15+ compute steps' 
-    }
-  ];
+  const workflowTypes: WorkflowType[] = transferredVariables.workflowTypes ?? DEFAULT_WORKFLOW_TYPES;
 
-  const calculateCreditUsage = () => {
-    const currentTier = tiers[selectedTier as keyof typeof tiers];
-    const workflow = workflowTypes[selectedWorkflowIndex] ?? workflowTypes[0];
-    const variableCreditsPerExecution = workflow.credits;
-    const totalCreditsPerExecution = Number(currentTier.fixedCreditsPerExecution) + Number(variableCreditsPerExecution);
-    const totalCreditsNeeded = usage.executions * totalCreditsPerExecution;
-    const includedCredits = currentTier.credits;
-    
-    let additionalCreditsNeeded = Math.max(0, totalCreditsNeeded - includedCredits);
-    
-    // BYOK discount calculation (reduces variable costs by ~50-80% typically)
-    if (usage.hasApiKeys && additionalCreditsNeeded > 0) {
-      // Use BYOK savings from transferred variables if present
-      const variableCreditsInOverage = Math.min(additionalCreditsNeeded, usage.executions * variableCreditsPerExecution);
-      const estimatedSavings = variableCreditsInOverage * (BYOK_SAVINGS / 100);
-      additionalCreditsNeeded = Math.max(0, additionalCreditsNeeded - estimatedSavings);
-    }
-    
-    const additionalCreditCost = additionalCreditsNeeded * CREDIT_RATE;
-    const totalCost = currentTier.basePrice + additionalCreditCost;
-    
-    return {
-      totalCreditsPerExecution,
-      totalCreditsNeeded,
-      includedCredits,
-      additionalCreditsNeeded: Math.max(0, totalCreditsNeeded - includedCredits),
-      additionalCreditsAfterByok: additionalCreditsNeeded,
-      additionalCreditCost,
-      totalCost,
-      creditPacksNeeded: Math.ceil(additionalCreditsNeeded / CREDIT_PACK_SIZE),
-      variableCreditsPerExecution
-    };
-  };
-
-  const costBreakdown = calculateCreditUsage();
-
-  const formatNumber = (num: number) => {
-    return num.toLocaleString();
-  };
+  const costBreakdown = calculateCreditUsage(
+    usage,
+    selectedWorkflowIndex,
+    selectedTier,
+    tiers,
+    workflowTypes,
+    CREDIT_RATE,
+    CREDIT_PACK_SIZE,
+    BYOK_SAVINGS
+  );
 
   const handleTransferVariables = (variables: TransferredVariables) => {
     setTransferredVariables(variables);
@@ -212,7 +62,6 @@ const PricingCalculator = () => {
   };
 
   // If scenarios view is selected, render the Scenarios component
-  // TS fix: ensure ViewType is used for currentView, and comparison is type-safe
   if (currentView === "scenarios") {
     return (
       <Scenarios
@@ -241,7 +90,7 @@ const PricingCalculator = () => {
         {/* Navigation Menu */}
         <div className="mt-4 flex justify-center gap-2">
           <button
-            onClick={() => setCurrentView("calculator" as ViewType)}
+            onClick={() => setCurrentView("calculator")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
               currentView === "calculator"
                 ? "bg-blue-500 text-white"
@@ -252,7 +101,7 @@ const PricingCalculator = () => {
             Calculator
           </button>
           <button
-            onClick={() => setCurrentView("scenarios" as ViewType)}
+            onClick={() => setCurrentView("scenarios")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
               currentView === "scenarios"
                 ? "bg-blue-500 text-white"
@@ -264,7 +113,7 @@ const PricingCalculator = () => {
             Scenarios
           </button>
           <button
-            onClick={() => setCurrentView("feature-comparison" as ViewType)}
+            onClick={() => setCurrentView("feature-comparison")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
               currentView === "feature-comparison"
                 ? "bg-blue-500 text-white"
@@ -342,7 +191,7 @@ const PricingCalculator = () => {
                   <div className="flex items-start gap-2">
                     <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
                     <div>
-                      BYOK saves ~60% on variable costs by eliminating our 20% markup on third-party provider fees.
+                      BYOK saves ~{BYOK_SAVINGS}% on variable costs by eliminating our markup on third-party provider fees.
                     </div>
                   </div>
                 </div>
@@ -374,8 +223,6 @@ const PricingCalculator = () => {
                 ))}
               </div>
             </div>
-
-            
           </div>
         </div>
 
@@ -434,7 +281,18 @@ const PricingCalculator = () => {
               
               <hr className="my-3" />
               <div className="flex justify-between items-center text-lg font-bold">
-                <span>Total Monthly Cost:</span>
+                <span className="flex items-center gap-1">
+                  Total Monthly Cost:
+                  <span
+                    title={`Total Cost = Base Price (${tiers[selectedTier].basePrice}) + Additional Credit Cost (${costBreakdown.additionalCreditCost.toFixed(2)}) = ${costBreakdown.totalCost.toFixed(2)}${usage.hasApiKeys && costBreakdown.additionalCreditsNeeded !== costBreakdown.additionalCreditsAfterByok ? `\n(BYOK applied: Additional credits reduced by ${BYOK_SAVINGS}% of variable credits)` : ""}`}
+                    style={{ display: "inline-flex", alignItems: "center", cursor: "pointer" }}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="inline w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
+                      <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
+                    </svg>
+                  </span>
+                </span>
                 <span className={`${tiers[selectedTier].color} text-white px-3 py-1 rounded`}>
                   ${costBreakdown.totalCost.toFixed(2)}
                 </span>
@@ -471,7 +329,18 @@ const PricingCalculator = () => {
                   </div>
                   <div className="flex justify-between text-sm mb-2">
                     <span>Total Credits Needed</span>
-                    <span className="font-medium">{formatNumber(costBreakdown.totalCreditsNeeded)} credits</span>
+                    <span className="font-medium flex items-center gap-1">
+                      {formatNumber(costBreakdown.totalCreditsNeeded)} credits
+                      <span
+                        title={`Credits Needed = Executions (${usage.executions}) × (Fixed Credits/Execution (${tiers[selectedTier].fixedCreditsPerExecution}) + Workflow Credits (${costBreakdown.variableCreditsPerExecution})) = ${costBreakdown.totalCreditsNeeded}`}
+                        style={{ display: "inline-flex", alignItems: "center", cursor: "pointer" }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="inline w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
+                          <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
+                        </svg>
+                      </span>
+                    </span>
                   </div>
                   
                   <div className="w-full bg-gray-200 rounded-full h-3">
@@ -496,8 +365,17 @@ const PricingCalculator = () => {
                   <div className="flex justify-between text-xs text-gray-500 mt-1">
                     <span>Included: {formatNumber(costBreakdown.includedCredits)}</span>
                     {costBreakdown.totalCreditsNeeded > costBreakdown.includedCredits && (
-                      <span className="text-red-600">
+                      <span className="text-red-600 flex items-center gap-1">
                         Overage: {formatNumber(costBreakdown.additionalCreditsNeeded)}
+                        <span
+                          title={`Overage Credits = max(0, Credits Needed (${costBreakdown.totalCreditsNeeded}) - Included Credits (${costBreakdown.includedCredits})) = ${costBreakdown.additionalCreditsNeeded}`}
+                          style={{ display: "inline-flex", alignItems: "center", cursor: "pointer" }}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="inline w-3 h-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white"/>
+                            <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M12 16v-4m0-4h.01"/>
+                          </svg>
+                        </span>
                       </span>
                     )}
                   </div>
@@ -529,8 +407,6 @@ const PricingCalculator = () => {
                 Higher tiers have lower fixed costs per execution, making them more efficient for high-volume usage.
               </div>
             </div>
-
-            
           </div>
         </div>
       </div>
@@ -552,26 +428,26 @@ const PricingCalculator = () => {
               </li>
             </ul>
             <p>
-              The more you run workflows, the more credits you use. If you stay within your included credits, you just pay your plan price. If you go over, you’ll pay a little extra for the additional credits you use.
+              The more you run workflows, the more credits you use. If you stay within your included credits, you just pay your plan price. If you go over, you'll pay a little extra for the additional credits you use.
             </p>
           </div>
           <div>
             <h3 className="font-medium text-gray-800 mb-2">What happens if I go over my included credits?</h3>
             <p>
-              If you use more credits than your plan includes, you’ll be charged for the extra credits at a low per-credit rate. You can also buy credit packs in advance for a discount.
+              If you use more credits than your plan includes, you'll be charged for the extra credits at a low per-credit rate. You can also buy credit packs in advance for a discount.
             </p>
           </div>
           <div>
             <h3 className="font-medium text-gray-800 mb-2">How can I save with BYOK?</h3>
             <p>
-              If you bring your own API keys for providers like OpenAI or Anthropic, you’ll save on the variable part of your credit usage. This can reduce your extra credit costs by about {BYOK_SAVINGS}%.
+              If you bring your own API keys for providers like OpenAI or Anthropic, you'll save on the variable part of your credit usage. This can reduce your extra credit costs by about {BYOK_SAVINGS}%.
             </p>
           </div>
           <div>
             <h3 className="font-medium text-gray-800 mb-2">Summary</h3>
             <ul className="list-disc list-inside ml-4">
               <li>
-                Each plan includes a monthly credit allowance (Starter: {tiers.starter.credits}, Business: {tiers.business.credits}, Enterprise: {tiers.enterprise.credits}).
+                Each plan includes a monthly credit allowance (Starter: {formatNumber(tiers.starter.credits)}, Business: {formatNumber(tiers.business.credits)}, Enterprise: {formatNumber(tiers.enterprise.credits)}).
               </li>
               <li>
                 You only pay extra if you use more credits than your plan includes.
