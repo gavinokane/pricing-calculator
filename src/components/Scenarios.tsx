@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator, Settings, Plus, Trash2, RotateCcw, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { Calculator, Settings, Plus, Trash2, RotateCcw, ArrowLeft } from 'lucide-react';
 
 interface Tier {
   name: string;
@@ -47,7 +47,7 @@ interface ScenariosProps {
 const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, initialVariables }) => {
   const [creditRate, setCreditRate] = useState(initialVariables?.creditRate ?? 0.004);
   const [creditPackSize, setCreditPackSize] = useState(initialVariables?.creditPackSize ?? 10000);
-  const [creditPackPrice, setCreditPackPrice] = useState(initialVariables?.creditPackPrice ?? 40);
+  // const [creditPackPrice, setCreditPackPrice] = useState(initialVariables?.creditPackPrice ?? 40);
   const [byokSavings, setByokSavings] = useState(initialVariables?.byokSavings ?? 60);
 
   const [tiers, setTiers] = useState<Record<string, Tier>>(initialVariables?.tiers ?? {
@@ -188,7 +188,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
       ...scenario,
       ...calculateScenario(scenario.executions, scenario.workflowIndex, scenario.tierKey, scenario.hasByok)
     })));
-  }, [creditRate, creditPackSize, creditPackPrice, byokSavings, tiers, workflowTypes]);
+  }, [creditRate, creditPackSize, byokSavings, tiers, workflowTypes]);
 
   const formatNumber = (num: number) => {
     return num.toLocaleString();
@@ -216,7 +216,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
               onClick={() => onTransferVariables({
                 creditRate,
                 creditPackSize,
-                creditPackPrice,
+                creditPackPrice: creditRate * creditPackSize,
                 byokSavings,
                 tiers,
                 workflowTypes
