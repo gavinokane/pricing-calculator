@@ -148,11 +148,16 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
   };
 
   const updateWorkflow = (index: number, property: keyof WorkflowType, value: string | number) => {
-    setWorkflowTypes(prev => prev.map((workflow, i) => 
-      i === index 
-        ? { ...workflow, [property]: typeof value === 'string' ? value : parseInt(value.toString()) }
-        : workflow
-    ));
+    setWorkflowTypes(prev => prev.map((workflow, i) => {
+      if (i !== index) return workflow;
+      if (property === 'credits') {
+        return { ...workflow, credits: Number(value) };
+      }
+      if (property === 'name') {
+        return { ...workflow, name: String(value) };
+      }
+      return workflow;
+    }));
   };
 
   const addWorkflowType = () => {
