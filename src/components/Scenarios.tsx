@@ -351,7 +351,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
                     <input
                       type="number"
                       value={tier.basePrice}
-                      onChange={(e) => updateTier(key, 'basePrice', e.target.value)}
+                      onChange={(e) => updateTier(key, 'basePrice', parseFloat(e.target.value) || 0)}
                       className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                     />
                   </td>
