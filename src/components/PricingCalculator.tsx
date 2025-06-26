@@ -1,19 +1,19 @@
-﻿import { useState } from 'react';
-import { Calculator, Zap, Building, Crown, Key, Info } from 'lucide-react';
+﻿import React, { useState } from 'react';
+import { Calculator, Zap, Building, Crown, Key, AlertCircle, Info } from 'lucide-react';
 
 const PricingCalculator = () => {
   const [usage, setUsage] = useState({
     executions: 500,
-    avgCreditsPerExecution: 15,
+    variableCreditsPerExecution: 10,
     hasApiKeys: false
   });
 
   const [selectedTier, setSelectedTier] = useState('starter');
 
   // Credit pricing
-  const CREDIT_RATE = 0.004; // $0.004 per credit
-  const CREDIT_PACK_SIZE = 10000;
-  const CREDIT_PACK_PRICE = 40;
+  const CREDIT_RATE = 0.01; // $0.004 per credit
+  const CREDIT_PACK_SIZE = 50000;
+  const CREDIT_PACK_PRICE = 50;
 
   // Pricing tiers configuration
   const tiers = {
@@ -23,9 +23,11 @@ const PricingCalculator = () => {
       basePrice: 50,
       color: 'bg-blue-500',
       credits: 1000,
+      fixedCreditsPerExecution: 10,
       workspace: 'Shared',
       features: [
         '1,000 credits included',
+        '4 credits fixed cost per execution',
         'Shared workspace',
         'Pre-built agent templates',
         'Basic workflow builder',
@@ -39,10 +41,12 @@ const PricingCalculator = () => {
       icon: <Building className="w-5 h-5" />,
       basePrice: 400,
       color: 'bg-purple-500',
-      credits: 200000,
+      credits: 50000,
+      fixedCreditsPerExecution: 5,
       workspace: 'Private',
       features: [
         '200,000 credits included',
+        '3 credits fixed cost per execution',
         'Private workspace',
         'Custom agent development',
         'Advanced workflow automation',
@@ -58,10 +62,12 @@ const PricingCalculator = () => {
       icon: <Crown className="w-5 h-5" />,
       basePrice: 1000,
       color: 'bg-amber-500',
-      credits: 300000,
+      credits: 100000,
+      fixedCreditsPerExecution: .5,
       workspace: 'Private + SSO',
       features: [
         '300,000 credits included',
+        '2 credits fixed cost per execution',
         'Private workspace with SSO',
         'Role-based access control (RBAC)',
         'Unlimited custom agents',
@@ -75,16 +81,54 @@ const PricingCalculator = () => {
     }
   };
 
-  // Example execution types for reference
-  const executionExamples = [
-    { name: 'Simple automation (no LLM)', credits: '5-8 credits', description: 'Data processing, API calls, basic logic' },
-    { name: 'LLM-powered workflow', credits: '15-50 credits', description: 'Text analysis, content generation, reasoning' },
-    { name: 'Complex multi-step agent', credits: '30-100+ credits', description: 'Multiple LLM calls, tool integrations, decision trees' }
+  // Workflow types with variable credit costs
+  const workflowTypes = [
+    { 
+      name: 'Simple Email Classifier', 
+      credits: 10, 
+      description: '1 LLM call (classification), 2 compute steps (routing, logging)' 
+    },
+    { 
+      name: 'Basic Data Processing', 
+      credits: 15, 
+      description: '2 LLM calls (validation, formatting), 5 compute steps' 
+    },
+    { 
+      name: 'Content Summarization', 
+      credits: 25, 
+      description: '1 large LLM call (summarization), 3 compute steps' 
+    },
+    { 
+      name: 'Classifier Sharepoint+BOX', 
+      credits: 30, 
+      description: '2 LLM call (classification), 3 compute steps (routing, logging)' 
+    },
+    { 
+      name: 'Report Generation', 
+      credits: 40, 
+      description: '2 LLM calls (research, writing), 5 compute steps' 
+    },
+    { 
+      name: 'Research & Analysis', 
+      credits: 50, 
+      description: '4 LLM calls (research, analysis, synthesis), 8 compute steps' 
+    },
+    { 
+      name: 'Complex Multi-Step Agent', 
+      credits: 100, 
+      description: '6 LLM calls (planning, execution, validation), 10 compute steps' 
+    },
+    { 
+      name: 'Advanced Multi-Agent System', 
+      credits: 200, 
+      description: '8+ LLM calls (coordination, execution, review), 15+ compute steps' 
+    }
   ];
 
   const calculateCreditUsage = () => {
-    const totalCreditsNeeded = usage.executions * usage.avgCreditsPerExecution;
-    const currentTier = tiers[selectedTier as keyof typeof tiers];
+    const currentTier = tiers[selectedTier];
+    const totalCreditsPerExecution = currentTier.fixedCreditsPerExecution + usage.variableCreditsPerExecution;
+    const totalCreditsNeeded = usage.executions * totalCreditsPerExecution;
     const includedCredits = currentTier.credits;
     
     let additionalCreditsNeeded = Math.max(0, totalCreditsNeeded - includedCredits);
@@ -93,7 +137,8 @@ const PricingCalculator = () => {
     if (usage.hasApiKeys && additionalCreditsNeeded > 0) {
       // Estimate that BYOK saves about 60% on variable costs (LLM calls)
       // This is a simplified calculation - in reality it depends on the execution mix
-      const estimatedSavings = additionalCreditsNeeded * 0.6;
+      const variableCreditsInOverage = Math.min(additionalCreditsNeeded, usage.executions * usage.variableCreditsPerExecution);
+      const estimatedSavings = variableCreditsInOverage * 0.6;
       additionalCreditsNeeded = Math.max(0, additionalCreditsNeeded - estimatedSavings);
     }
     
@@ -101,6 +146,7 @@ const PricingCalculator = () => {
     const totalCost = currentTier.basePrice + additionalCreditCost;
     
     return {
+      totalCreditsPerExecution,
       totalCreditsNeeded,
       includedCredits,
       additionalCreditsNeeded: Math.max(0, totalCreditsNeeded - includedCredits),
@@ -113,7 +159,7 @@ const PricingCalculator = () => {
 
   const costBreakdown = calculateCreditUsage();
 
-  const formatNumber = (num: number) => {
+  const formatNumber = (num) => {
     return num.toLocaleString();
   };
 
@@ -122,11 +168,11 @@ const PricingCalculator = () => {
       <div className="text-center mb-8">
         <div className="flex items-center justify-center gap-2 mb-4">
           <Calculator className="w-8 h-8 text-blue-600" />
-          <h1 className="text-3xl font-bold text-gray-800">DoozerAI AI Pricing Calculator</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Doozer AI Pricing Calculator</h1>
         </div>
         <p className="text-gray-600">Calculate your monthly costs based on credit usage</p>
         <div className="mt-2 text-sm text-gray-500">
-          Credit Rate: $40 per 10,000 credits ($0.004 per credit)
+          Needs updated...Credit Rate: $50 per 10,000 credits ($0.004 per credit)
         </div>
       </div>
 
@@ -155,20 +201,24 @@ const PricingCalculator = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Average Credits per Execution
+                  Agent Workflow Type
                 </label>
-                <input
-                  type="number"
-                  value={usage.avgCreditsPerExecution}
+                <select
+                  value={usage.variableCreditsPerExecution}
                   onChange={(e) => setUsage(prev => ({
                     ...prev,
-                    avgCreditsPerExecution: parseInt(e.target.value) || 0
+                    variableCreditsPerExecution: parseInt(e.target.value)
                   }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  min="0"
-                />
+                >
+                  {workflowTypes.map((workflow, index) => (
+                    <option key={index} value={workflow.credits}>
+                      {workflow.name} ({workflow.credits} credits)
+                    </option>
+                  ))}
+                </select>
                 <div className="mt-1 text-xs text-gray-500">
-                  See examples below for guidance
+                  Variable credits for LLM calls and compute steps
                 </div>
               </div>
 
@@ -226,18 +276,19 @@ const PricingCalculator = () => {
               </div>
             </div>
 
-            {/* Execution Examples */}
+            {/* Workflow Type Details */}
             <div className="mt-6">
-              <h3 className="text-sm font-medium mb-2 text-gray-800">Credit Usage Examples</h3>
-              <div className="space-y-2">
-                {executionExamples.map((example, index) => (
-                  <div key={index} className="bg-gray-50 rounded-md p-2 text-xs">
-                    <div className="font-medium text-gray-800">{example.name}</div>
-                    <div className="text-blue-600 font-medium">{example.credits}</div>
-                    <div className="text-gray-600">{example.description}</div>
+              <h3 className="text-sm font-medium mb-2 text-gray-800">Selected Workflow Details</h3>
+              {(() => {
+                const selectedWorkflow = workflowTypes.find(w => w.credits === usage.variableCreditsPerExecution);
+                return selectedWorkflow ? (
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm">
+                    <div className="font-medium text-blue-900">{selectedWorkflow.name}</div>
+                    <div className="text-blue-700 mt-1">{selectedWorkflow.description}</div>
+                    <div className="text-blue-600 font-medium mt-2">{selectedWorkflow.credits} variable credits per execution</div>
                   </div>
-                ))}
-              </div>
+                ) : null;
+              })()}
             </div>
           </div>
         </div>
@@ -246,10 +297,10 @@ const PricingCalculator = () => {
         <div className="lg:col-span-2">
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="flex items-center gap-2 mb-6">
-              {tiers[selectedTier as keyof typeof tiers].icon}
-              <h2 className="text-xl font-semibold text-gray-800">{tiers[selectedTier as keyof typeof tiers].name} Plan</h2>
+              {tiers[selectedTier].icon}
+              <h2 className="text-xl font-semibold text-gray-800">{tiers[selectedTier].name} Plan</h2>
               <div className="ml-auto text-sm text-gray-600">
-                {tiers[selectedTier as keyof typeof tiers].workspace} Workspace
+                {tiers[selectedTier].workspace} Workspace
               </div>
             </div>
 
@@ -257,7 +308,7 @@ const PricingCalculator = () => {
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-gray-600">Base Plan Cost:</span>
-                <span className="font-medium">${tiers[selectedTier as keyof typeof tiers].basePrice.toFixed(2)}</span>
+                <span className="font-medium">${tiers[selectedTier].basePrice.toFixed(2)}</span>
               </div>
               
               <div className="flex justify-between items-center mb-2">
@@ -298,7 +349,7 @@ const PricingCalculator = () => {
               <hr className="my-3" />
               <div className="flex justify-between items-center text-lg font-bold">
                 <span>Total Monthly Cost:</span>
-                <span className={`${tiers[selectedTier as keyof typeof tiers].color} text-white px-3 py-1 rounded`}>
+                <span className={`${tiers[selectedTier].color} text-white px-3 py-1 rounded`}>
                   ${costBreakdown.totalCost.toFixed(2)}
                 </span>
               </div>
@@ -311,7 +362,7 @@ const PricingCalculator = () => {
               )}
             </div>
 
-            {/* Usage Visualization */}
+            {/* Credit Usage Visualization */}
             <div className="mb-6">
               <h3 className="text-lg font-medium mb-3 text-gray-800">Credit Usage Breakdown</h3>
               <div className="space-y-3">
@@ -321,8 +372,16 @@ const PricingCalculator = () => {
                     <span className="font-medium">{formatNumber(usage.executions)} runs</span>
                   </div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span>Credits per Execution</span>
-                    <span className="font-medium">{usage.avgCreditsPerExecution} credits</span>
+                    <span>Fixed Credits per Execution</span>
+                    <span className="font-medium">{tiers[selectedTier].fixedCreditsPerExecution} credits</span>
+                  </div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>Variable Credits per Execution</span>
+                    <span className="font-medium">{usage.variableCreditsPerExecution} credits</span>
+                  </div>
+                  <div className="flex justify-between text-sm mb-1 border-t pt-1">
+                    <span className="font-medium">Total Credits per Execution</span>
+                    <span className="font-medium">{costBreakdown.totalCreditsPerExecution} credits</span>
                   </div>
                   <div className="flex justify-between text-sm mb-2">
                     <span>Total Credits Needed</span>
@@ -360,11 +419,34 @@ const PricingCalculator = () => {
               </div>
             </div>
 
+            {/* Tier Comparison */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium mb-3 text-gray-800">Cost per Execution Across Tiers</h3>
+              <div className="grid grid-cols-3 gap-4">
+                {Object.entries(tiers).map(([tierKey, tier]) => {
+                  const tierCreditsPerExecution = tier.fixedCreditsPerExecution + usage.variableCreditsPerExecution;
+                  const tierCostPerExecution = tierCreditsPerExecution * CREDIT_RATE;
+                  const isCurrentTier = tierKey === selectedTier;
+                  
+                  return (
+                    <div key={tierKey} className={`p-3 rounded-lg border-2 ${isCurrentTier ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
+                      <div className="text-sm font-medium text-gray-800">{tier.name}</div>
+                      <div className="text-xs text-gray-600">{tier.fixedCreditsPerExecution} + {usage.variableCreditsPerExecution} credits</div>
+                      <div className="text-sm font-bold text-gray-800">${tierCostPerExecution.toFixed(3)}/execution</div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-2 text-xs text-gray-500">
+                Higher tiers have lower fixed costs per execution, making them more efficient for high-volume usage.
+              </div>
+            </div>
+
             {/* Features */}
             <div>
               <h3 className="text-lg font-medium mb-3 text-gray-800">Plan Features</h3>
               <div className="grid sm:grid-cols-2 gap-2">
-                {tiers[selectedTier as keyof typeof tiers].features.map((feature, index) => (
+                {tiers[selectedTier].features.map((feature, index) => (
                   <div key={index} className="flex items-center gap-2 text-sm text-gray-600">
                     <div className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />
                     {feature}
