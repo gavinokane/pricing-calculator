@@ -44,30 +44,54 @@ interface ScenariosProps {
   initialVariables?: TransferredVariables;
 }
 
+const SCENARIO_STORAGE_KEY = "doozerScenarioState";
+
 const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, initialVariables }) => {
-  const [creditRate, setCreditRate] = useState(initialVariables?.creditRate ?? 0.004);
-  const [creditPackSize, setCreditPackSize] = useState(initialVariables?.creditPackSize ?? 10000);
+  // Load persisted state if available
+  const persisted = (() => {
+    try {
+      const raw = localStorage.getItem(SCENARIO_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const [creditRate, setCreditRate] = useState(
+    persisted?.creditRate ?? initialVariables?.creditRate ?? 0.004
+  );
+  const [creditPackSize, setCreditPackSize] = useState(
+    persisted?.creditPackSize ?? initialVariables?.creditPackSize ?? 10000
+  );
   // const [creditPackPrice, setCreditPackPrice] = useState(initialVariables?.creditPackPrice ?? 40);
-  const [byokSavings, setByokSavings] = useState(initialVariables?.byokSavings ?? 60);
+  const [byokSavings, setByokSavings] = useState(
+    persisted?.byokSavings ?? initialVariables?.byokSavings ?? 60
+  );
 
-  const [tiers, setTiers] = useState<Record<string, Tier>>(initialVariables?.tiers ?? {
-    starter: { name: 'Starter', basePrice: 50, credits: 1000, fixedCreditsPerExecution: 4 },
-    business: { name: 'Business', basePrice: 400, credits: 200000, fixedCreditsPerExecution: 3 },
-    enterprise: { name: 'Enterprise', basePrice: 1000, credits: 300000, fixedCreditsPerExecution: 2 }
-  });
+  const [tiers, setTiers] = useState<Record<string, Tier>>(
+    persisted?.tiers ?? initialVariables?.tiers ?? {
+      starter: { name: 'Starter', basePrice: 50, credits: 1000, fixedCreditsPerExecution: 4 },
+      business: { name: 'Business', basePrice: 400, credits: 200000, fixedCreditsPerExecution: 3 },
+      enterprise: { name: 'Enterprise', basePrice: 1000, credits: 300000, fixedCreditsPerExecution: 2 }
+    }
+  );
 
-  const [workflowTypes, setWorkflowTypes] = useState<WorkflowType[]>(initialVariables?.workflowTypes ?? [
-    { name: 'Simple Email Classifier', credits: 10 },
-    { name: 'Basic Data Processing', credits: 15 },
-    { name: 'Content Summarization', credits: 25 },
-    { name: 'Classifier Sharepoint+BOX', credits: 30 },
-    { name: 'Report Generation', credits: 40 },
-    { name: 'Research & Analysis', credits: 50 },
-    { name: 'Complex Multi-Step Agent', credits: 100 },
-    { name: 'Advanced Multi-Agent System', credits: 200 }
-  ]);
+  const [workflowTypes, setWorkflowTypes] = useState<WorkflowType[]>(
+    persisted?.workflowTypes ?? initialVariables?.workflowTypes ?? [
+      { name: 'Simple Email Classifier', credits: 10 },
+      { name: 'Basic Data Processing', credits: 15 },
+      { name: 'Content Summarization', credits: 25 },
+      { name: 'Classifier Sharepoint+BOX', credits: 30 },
+      { name: 'Report Generation', credits: 40 },
+      { name: 'Research & Analysis', credits: 50 },
+      { name: 'Complex Multi-Step Agent', credits: 100 },
+      { name: 'Advanced Multi-Agent System', credits: 200 }
+    ]
+  );
 
-  const [scenarios, setScenarios] = useState<Scenario[]>([]);
+  const [scenarios, setScenarios] = useState<Scenario[]>(
+    persisted?.scenarios ?? []
+  );
 
   // Scenario input state
   const [monthlyExecutions, setMonthlyExecutions] = useState(500);
@@ -194,6 +218,21 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
       ...calculateScenario(scenario.executions, scenario.workflowIndex, scenario.tierKey, scenario.hasByok)
     })));
   }, [creditRate, creditPackSize, byokSavings, tiers, workflowTypes]);
+
+  // Persist all relevant state to localStorage on change
+  useEffect(() => {
+    const toPersist = {
+      creditRate,
+      creditPackSize,
+      byokSavings,
+      tiers,
+      workflowTypes,
+      scenarios
+    };
+    try {
+      localStorage.setItem(SCENARIO_STORAGE_KEY, JSON.stringify(toPersist));
+    } catch {}
+  }, [creditRate, creditPackSize, byokSavings, tiers, workflowTypes, scenarios]);
 
   const formatNumber = (num: number) => {
     return num.toLocaleString();
