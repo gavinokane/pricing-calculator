@@ -1,5 +1,5 @@
 ﻿import React, { useState } from 'react';
-import { Calculator, Zap, Building, Crown, Key, AlertCircle, Info, Settings } from 'lucide-react';
+import { Calculator, Zap, Building, Crown, Key, Info, Settings } from 'lucide-react';
 import Scenarios from './Scenarios';
 
 interface Tier {
@@ -29,7 +29,8 @@ interface TransferredVariables {
 }
 
 const PricingCalculator = () => {
-  const [currentView, setCurrentView] = useState<'calculator' | 'scenarios'>('calculator');
+  type ViewType = 'calculator' | 'scenarios';
+  const [currentView, setCurrentView] = useState<ViewType>('calculator');
   const [transferredVariables, setTransferredVariables] = useState<TransferredVariables>({});
   const [usage, setUsage] = useState({
     executions: 500,
@@ -210,12 +211,15 @@ const PricingCalculator = () => {
   };
 
   // If scenarios view is selected, render the Scenarios component
-  if (currentView === 'scenarios') {
-    return <Scenarios 
-      onBack={() => setCurrentView('calculator')} 
-      onTransferVariables={handleTransferVariables}
-      initialVariables={transferredVariables}
-    />;
+  // TS fix: ensure ViewType is used for currentView, and comparison is type-safe
+  if (currentView === "scenarios") {
+    return (
+      <Scenarios
+        onBack={() => setCurrentView("calculator")}
+        onTransferVariables={handleTransferVariables}
+        initialVariables={transferredVariables}
+      />
+    );
   }
 
   return (
@@ -235,9 +239,9 @@ const PricingCalculator = () => {
           <button
             onClick={() => setCurrentView('calculator')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-              currentView === 'calculator'
-                ? 'bg-blue-500 text-white'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              currentView === "calculator"
+                ? "bg-blue-500 text-white"
+                : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
             }`}
           >
             <Calculator className="w-4 h-4" />
@@ -246,10 +250,11 @@ const PricingCalculator = () => {
           <button
             onClick={() => setCurrentView('scenarios')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-              currentView === 'scenarios'
-                ? 'bg-blue-500 text-white'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+              currentView === "scenarios"
+                ? "bg-blue-500 text-white"
+                : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
             }`}
+            type="button"
           >
             <Settings className="w-4 h-4" />
             Scenarios
