@@ -337,6 +337,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
                 <th className="text-left p-3 border-b font-semibold">Tier</th>
                 <th className="text-left p-3 border-b font-semibold">Base Price ($)</th>
                 <th className="text-left p-3 border-b font-semibold">Included Credits</th>
+                <th className="text-left p-3 border-b font-semibold">Price per Unit</th>
                 <th className="text-left p-3 border-b font-semibold">Fixed Credits/Execution</th>
                 <th className="text-left p-3 border-b font-semibold">Actions</th>
               </tr>
@@ -363,6 +364,11 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
                       onChange={(e) => updateTier(key, 'credits', e.target.value)}
                       className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
                     />
+                  </td>
+                  <td className="p-3 border-b text-center">
+                    {tier.credits > 0
+                      ? `$${(tier.basePrice / tier.credits).toFixed(4)}`
+                      : '—'}
                   </td>
                   <td className="p-3 border-b">
                     <input
