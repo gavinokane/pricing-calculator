@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doozer AI Pricing Scenarios</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8fafc;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #1e293b;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .section h2 {
+            color: #334155;
+            margin-top: 0;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+        .grid {
+            display: grid;
+            gap: 15px;
+        }
+        .grid-2 { grid-template-columns: 1fr 1fr; }
+        .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: #374151;
+        }
+        input, select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .results-table th,
+        .results-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .results-table th {
+            background-color: #f9fafb;
+            font-weight: 600;
+        }
+        .highlight {
+            background-color: #fef3c7;
+            font-weight: 600;
+        }
+        .tier-starter { background-color: #dbeafe; }
+        .tier-business { background-color: #f3e8ff; }
+        .tier-enterprise { background-color: #fef3c7; }
+        .scenario-input {
+            background-color: #f8fafc;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        .alert {
+            background-color: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        .cost-breakdown {
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧮 Doozer AI Pricing Scenario Analyzer</h1>
+        
+        <!-- Discrepancy Alert -->
+        <div class="alert">
+            <strong>⚠️ Discrepancies Found in Original Code:</strong>
+            <ul>
+                <li>Credit rate: Code uses $0.01 but comments mention $0.004</li>
+                <li>Credit pack price: Code uses $50 but explanation mentions $40</li>
+                <li>Tier credits and fixed costs don't match feature descriptions</li>
+            </ul>
+            Adjust the variables below to test different scenarios.
+        </div>
+
+        <!-- Global Variables -->
+        <div class="section">
+            <h2>📊 Global Pricing Variables</h2>
+            <div class="grid grid-4">
+                <div class="input-group">
+                    <label for="creditRate">Credit Rate ($)</label>
+                    <input type="number" id="creditRate" step="0.001" value="0.004">
+                </div>
+                <div class="input-group">
+                    <label for="creditPackSize">Credit Pack Size</label>
+                    <input type="number" id="creditPackSize" value="10000">
+                </div>
+                <div class="input-group">
+                    <label for="creditPackPrice">Credit Pack Price ($)</label>
+                    <input type="number" id="creditPackPrice" value="40">
+                </div>
+                <div class="input-group">
+                    <label for="byokSavings">BYOK Savings (%)</label>
+                    <input type="number" id="byokSavings" value="60" min="0" max="100">
+                </div>
+            </div>
+        </div>
+
+        <!-- Tier Configuration -->
+        <div class="section">
+            <h2>🏢 Tier Configuration</h2>
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Tier</th>
+                        <th>Base Price ($)</th>
+                        <th>Included Credits</th>
+                        <th>Fixed Credits/Execution</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tierConfig">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Workflow Types -->
+        <div class="section">
+            <h2>⚙️ Workflow Types</h2>
+            <div id="workflowTypes"></div>
+            <button onclick="addWorkflowType()" style="margin-top: 10px; padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">Add Workflow Type</button>
+        </div>
+
+        <!-- Scenario Testing -->
+        <div class="section">
+            <h2>🎯 Scenario Testing</h2>
+            <div class="scenario-input">
+                <div class="grid grid-4">
+                    <div class="input-group">
+                        <label for="monthlyExecutions">Monthly Executions</label>
+                        <input type="number" id="monthlyExecutions" value="500">
+                    </div>
+                    <div class="input-group">
+                        <label for="workflowType">Workflow Type</label>
+                        <select id="workflowType"></select>
+                    </div>
+                    <div class="input-group">
+                        <label for="selectedTier">Tier</label>
+                        <select id="selectedTier">
+                            <option value="starter">Starter</option>
+                            <option value="business">Business</option>
+                            <option value="enterprise">Enterprise</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="hasByok">
+                            <label for="hasByok">Use BYOK</label>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="addScenario()" style="margin-top: 15px; padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer;">Add Scenario</button>
+            </div>
+
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Scenario</th>
+                        <th>Executions</th>
+                        <th>Workflow</th>
+                        <th>Tier</th>
+                        <th>BYOK</th>
+                        <th>Credits Needed</th>
+                        <th>Overage Credits</th>
+                        <th>Total Cost</th>
+                        <th>Cost/Execution</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="scenarioResults">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Comparison Matrix -->
+        <div class="section">
+            <h2>📈 Tier Comparison Matrix</h2>
+            <div class="grid grid-2">
+                <div class="input-group">
+                    <label for="comparisonExecutions">Monthly Executions</label>
+                    <input type="number" id="comparisonExecutions" value="1000">
+                </div>
+                <div class="input-group">
+                    <label for="comparisonWorkflow">Workflow Type</label>
+                    <select id="comparisonWorkflow"></select>
+                </div>
+            </div>
+            <table class="results-table" id="comparisonMatrix" style="margin-top: 15px;">
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let tiers = {
+            starter: { name: 'Starter', basePrice: 50, credits: 1000, fixedCreditsPerExecution: 4 },
+            business: { name: 'Business', basePrice: 400, credits: 200000, fixedCreditsPerExecution: 3 },
+            enterprise: { name: 'Enterprise', basePrice: 1000, credits: 300000, fixedCreditsPerExecution: 2 }
+        };
+
+        let workflowTypes = [
+            { name: 'Simple Email Classifier', credits: 10 },
+            { name: 'Basic Data Processing', credits: 15 },
+            { name: 'Content Summarization', credits: 25 },
+            { name: 'Classifier Sharepoint+BOX', credits: 30 },
+            { name: 'Report Generation', credits: 40 },
+            { name: 'Research & Analysis', credits: 50 },
+            { name: 'Complex Multi-Step Agent', credits: 100 },
+            { name: 'Advanced Multi-Agent System', credits: 200 }
+        ];
+
+        let scenarios = [];
+
+        // Initialize
+        function init() {
+            renderTierConfig();
+            renderWorkflowTypes();
+            updateWorkflowSelects();
+            updateComparisonMatrix();
+        }
+
+        // Render tier configuration
+        function renderTierConfig() {
+            const tbody = document.getElementById('tierConfig');
+            tbody.innerHTML = Object.entries(tiers).map(([key, tier]) => `
+                <tr class="tier-${key}">
+                    <td><strong>${tier.name}</strong></td>
+                    <td><input type="number" value="${tier.basePrice}" onchange="updateTier('${key}', 'basePrice', this.value)"></td>
+                    <td><input type="number" value="${tier.credits}" onchange="updateTier('${key}', 'credits', this.value)"></td>
+                    <td><input type="number" step="0.1" value="${tier.fixedCreditsPerExecution}" onchange="updateTier('${key}', 'fixedCreditsPerExecution', this.value)"></td>
+                    <td><button onclick="resetTier('${key}')" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Reset</button></td>
+                </tr>
+            `).join('');
+        }
+
+        // Render workflow types
+        function renderWorkflowTypes() {
+            const container = document.getElementById('workflowTypes');
+            container.innerHTML = workflowTypes.map((workflow, index) => `
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                    <input type="text" value="${workflow.name}" onchange="updateWorkflow(${index}, 'name', this.value)" style="flex: 1;">
+                    <input type="number" value="${workflow.credits}" onchange="updateWorkflow(${index}, 'credits', this.value)" style="width: 100px;">
+                    <button onclick="removeWorkflow(${index})" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Remove</button>
+                </div>
+            `).join('');
+        }
+
+        // Update workflow selects
+        function updateWorkflowSelects() {
+            const selects = [document.getElementById('workflowType'), document.getElementById('comparisonWorkflow')];
+            selects.forEach(select => {
+                if (select) {
+                    select.innerHTML = workflowTypes.map((workflow, index) => 
+                        `<option value="${index}">${workflow.name} (${workflow.credits} credits)</option>`
+                    ).join('');
+                }
+            });
+        }
+
+        // Update tier
+        function updateTier(tierKey, property, value) {
+            tiers[tierKey][property] = property === 'name' ? value : parseFloat(value);
+            renderTierConfig();
+            updateScenarios();
+            updateComparisonMatrix();
+        }
+
+        // Reset tier to defaults
+        function resetTier(tierKey) {
+            const defaults = {
+                starter: { name: 'Starter', basePrice: 50, credits: 1000, fixedCreditsPerExecution: 4 },
+                business: { name: 'Business', basePrice: 400, credits: 200000, fixedCreditsPerExecution: 3 },
+                enterprise: { name: 'Enterprise', basePrice: 1000, credits: 300000, fixedCreditsPerExecution: 2 }
+            };
+            tiers[tierKey] = { ...defaults[tierKey] };
+            renderTierConfig();
+            updateScenarios();
+            updateComparisonMatrix();
+        }
+
+        // Update workflow
+        function updateWorkflow(index, property, value) {
+            workflowTypes[index][property] = property === 'name' ? value : parseInt(value);
+            renderWorkflowTypes();
+            updateWorkflowSelects();
+            updateScenarios();
+            updateComparisonMatrix();
+        }
+
+        // Add workflow type
+        function addWorkflowType() {
+            workflowTypes.push({ name: 'New Workflow', credits: 25 });
+            renderWorkflowTypes();
+            updateWorkflowSelects();
+        }
+
+        // Remove workflow
+        function removeWorkflow(index) {
+            workflowTypes.splice(index, 1);
+            renderWorkflowTypes();
+            updateWorkflowSelects();
+            updateScenarios();
+            updateComparisonMatrix();
+        }
+
+        // Calculate scenario cost
+        function calculateScenario(executions, workflowIndex, tierKey, hasByok) {
+            const creditRate = parseFloat(document.getElementById('creditRate').value);
+            const byokSavings = parseFloat(document.getElementById('byokSavings').value) / 100;
+            
+            const tier = tiers[tierKey];
+            const workflow = workflowTypes[workflowIndex];
+            
+            const totalCreditsPerExecution = tier.fixedCreditsPerExecution + workflow.credits;
+            const totalCreditsNeeded = executions * totalCreditsPerExecution;
+            const includedCredits = tier.credits;
+            
+            let additionalCreditsNeeded = Math.max(0, totalCreditsNeeded - includedCredits);
+            
+            // Apply BYOK savings (only on variable costs)
+            if (hasByok && additionalCreditsNeeded > 0) {
+                const variableCreditsInOverage = Math.min(additionalCreditsNeeded, executions * workflow.credits);
+                const estimatedSavings = variableCreditsInOverage * byokSavings;
+                additionalCreditsNeeded = Math.max(0, additionalCreditsNeeded - estimatedSavings);
+            }
+            
+            const additionalCreditCost = additionalCreditsNeeded * creditRate;
+            const totalCost = tier.basePrice + additionalCreditCost;
+            const costPerExecution = totalCost / executions;
+            
+            return {
+                totalCreditsPerExecution,
+                totalCreditsNeeded,
+                includedCredits,
+                additionalCreditsNeeded: Math.max(0, totalCreditsNeeded - includedCredits),
+                additionalCreditsAfterByok: additionalCreditsNeeded,
+                additionalCreditCost,
+                totalCost,
+                costPerExecution
+            };
+        }
+
+        // Add scenario
+        function addScenario() {
+            const executions = parseInt(document.getElementById('monthlyExecutions').value);
+            const workflowIndex = parseInt(document.getElementById('workflowType').value);
+            const tierKey = document.getElementById('selectedTier').value;
+            const hasByok = document.getElementById('hasByok').checked;
+            
+            const scenario = {
+                id: Date.now(),
+                executions,
+                workflowIndex,
+                tierKey,
+                hasByok,
+                ...calculateScenario(executions, workflowIndex, tierKey, hasByok)
+            };
+            
+            scenarios.push(scenario);
+            updateScenarios();
+        }
+
+        // Update scenarios
+        function updateScenarios() {
+            scenarios = scenarios.map(scenario => ({
+                ...scenario,
+                ...calculateScenario(scenario.executions, scenario.workflowIndex, scenario.tierKey, scenario.hasByok)
+            }));
+            
+            const tbody = document.getElementById('scenarioResults');
+            tbody.innerHTML = scenarios.map((scenario, index) => `
+                <tr>
+                    <td>Scenario ${index + 1}</td>
+                    <td>${scenario.executions.toLocaleString()}</td>
+                    <td>${workflowTypes[scenario.workflowIndex]?.name || 'Unknown'}</td>
+                    <td>${tiers[scenario.tierKey].name}</td>
+                    <td>${scenario.hasByok ? '✅' : '❌'}</td>
+                    <td>${scenario.totalCreditsNeeded.toLocaleString()}</td>
+                    <td>${scenario.additionalCreditsNeeded.toLocaleString()}</td>
+                    <td class="highlight">$${scenario.totalCost.toFixed(2)}</td>
+                    <td>$${scenario.costPerExecution.toFixed(3)}</td>
+                    <td><button onclick="removeScenario(${index})" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Remove</button></td>
+                </tr>
+            `).join('');
+        }
+
+        // Remove scenario
+        function removeScenario(index) {
+            scenarios.splice(index, 1);
+            updateScenarios();
+        }
+
+        // Update comparison matrix
+        function updateComparisonMatrix() {
+            const executions = parseInt(document.getElementById('comparisonExecutions').value) || 1000;
+            const workflowIndex = parseInt(document.getElementById('comparisonWorkflow').value) || 0;
+            
+            const matrix = document.getElementById('comparisonMatrix');
+            
+            let html = `
+                <thead>
+                    <tr>
+                        <th>Tier</th>
+                        <th>Base Price</th>
+                        <th>Credits Needed</th>
+                        <th>Overage</th>
+                        <th>Total Cost</th>
+                        <th>Cost/Execution</th>
+                        <th>Total Cost (BYOK)</th>
+                        <th>Cost/Execution (BYOK)</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+            
+            Object.entries(tiers).forEach(([tierKey, tier]) => {
+                const regular = calculateScenario(executions, workflowIndex, tierKey, false);
+                const byok = calculateScenario(executions, workflowIndex, tierKey, true);
+                
+                html += `
+                    <tr class="tier-${tierKey}">
+                        <td><strong>${tier.name}</strong></td>
+                        <td>$${tier.basePrice}</td>
+                        <td>${regular.totalCreditsNeeded.toLocaleString()}</td>
+                        <td>${regular.additionalCreditsNeeded.toLocaleString()}</td>
+                        <td>$${regular.totalCost.toFixed(2)}</td>
+                        <td>$${regular.costPerExecution.toFixed(3)}</td>
+                        <td>$${byok.totalCost.toFixed(2)}</td>
+                        <td>$${byok.costPerExecution.toFixed(3)}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody>';
+            matrix.innerHTML = html;
+        }
+
+        // Event listeners
+        document.getElementById('comparisonExecutions').addEventListener('input', updateComparisonMatrix);
+        document.getElementById('comparisonWorkflow').addEventListener('change', updateComparisonMatrix);
+        
+        // Auto-update when global variables change
+        ['creditRate', 'creditPackSize', 'creditPackPrice', 'byokSavings'].forEach(id => {
+            document.getElementById(id).addEventListener('input', () => {
+                updateScenarios();
+                updateComparisonMatrix();
+            });
+        });
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>

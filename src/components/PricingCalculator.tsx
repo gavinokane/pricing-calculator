@@ -1,88 +1,127 @@
 ﻿import React, { useState } from 'react';
-import { Calculator, Zap, Building, Crown, Key, AlertCircle, Info } from 'lucide-react';
+import { Calculator, Zap, Building, Crown, Key, AlertCircle, Info, Settings } from 'lucide-react';
+import Scenarios from './Scenarios';
+
+interface Tier {
+  name: string;
+  basePrice: number;
+  credits: number;
+  fixedCreditsPerExecution: number;
+  color?: string;
+  icon?: React.ReactNode;
+  workspace?: string;
+  features?: string[];
+}
+
+interface WorkflowType {
+  name: string;
+  credits: number;
+  description?: string;
+}
+
+interface TransferredVariables {
+  creditRate?: number;
+  creditPackSize?: number;
+  creditPackPrice?: number;
+  byokSavings?: number;
+  tiers?: Record<string, Tier>;
+  workflowTypes?: WorkflowType[];
+}
 
 const PricingCalculator = () => {
+  const [currentView, setCurrentView] = useState<'calculator' | 'scenarios'>('calculator');
+  const [transferredVariables, setTransferredVariables] = useState<TransferredVariables>({});
   const [usage, setUsage] = useState({
     executions: 500,
-    variableCreditsPerExecution: 10,
     hasApiKeys: false
   });
+  const [selectedWorkflowIndex, setSelectedWorkflowIndex] = useState(0);
 
-  const [selectedTier, setSelectedTier] = useState('starter');
+  const [selectedTier, setSelectedTier] = useState<'starter' | 'business' | 'enterprise'>('starter');
 
-  // Credit pricing
-  const CREDIT_RATE = 0.01; // $0.004 per credit
-  const CREDIT_PACK_SIZE = 50000;
-  const CREDIT_PACK_PRICE = 50;
+  // Credit pricing (use transferred variables if present)
+  const CREDIT_RATE = transferredVariables.creditRate ?? 0.01; // $0.004 per credit
+  const CREDIT_PACK_SIZE = transferredVariables.creditPackSize ?? 50000;
+  const CREDIT_PACK_PRICE = transferredVariables.creditPackPrice ?? 50;
+  const BYOK_SAVINGS = transferredVariables.byokSavings ?? 60;
 
-  // Pricing tiers configuration
-  const tiers = {
-    starter: {
-      name: 'Starter',
-      icon: <Zap className="w-5 h-5" />,
-      basePrice: 50,
-      color: 'bg-blue-500',
-      credits: 1000,
-      fixedCreditsPerExecution: 10,
-      workspace: 'Shared',
-      features: [
-        '1,000 credits included',
-        '4 credits fixed cost per execution',
-        'Shared workspace',
-        'Pre-built agent templates',
-        'Basic workflow builder',
-        'Standard integrations',
-        'Community support',
-        'Usage analytics'
-      ]
-    },
-    business: {
-      name: 'Business',
-      icon: <Building className="w-5 h-5" />,
-      basePrice: 400,
-      color: 'bg-purple-500',
-      credits: 50000,
-      fixedCreditsPerExecution: 5,
-      workspace: 'Private',
-      features: [
-        '200,000 credits included',
-        '3 credits fixed cost per execution',
-        'Private workspace',
-        'Custom agent development',
-        'Advanced workflow automation',
-        'Premium integrations',
-        'Priority support',
-        'Advanced analytics',
-        'Team collaboration',
-        'API access'
-      ]
-    },
-    enterprise: {
-      name: 'Enterprise',
-      icon: <Crown className="w-5 h-5" />,
-      basePrice: 1000,
-      color: 'bg-amber-500',
-      credits: 100000,
-      fixedCreditsPerExecution: .5,
-      workspace: 'Private + SSO',
-      features: [
-        '300,000 credits included',
-        '2 credits fixed cost per execution',
-        'Private workspace with SSO',
-        'Role-based access control (RBAC)',
-        'Unlimited custom agents',
-        'Enterprise workflow engine',
-        'Custom integrations',
-        'Dedicated support with SLA',
-        'Custom analytics & reporting',
-        'Advanced security features',
-        'On-premise deployment option'
-      ]
-    }
+  // Pricing tiers configuration (use transferred if present)
+  // Ensure color and icon are always present for each tier, even if transferred
+  const defaultTierMeta: Record<string, { color: string; icon: React.ReactNode }> = {
+    starter: { color: 'bg-blue-500', icon: <Zap className="w-5 h-5" /> },
+    business: { color: 'bg-purple-500', icon: <Building className="w-5 h-5" /> },
+    enterprise: { color: 'bg-amber-500', icon: <Crown className="w-5 h-5" /> }
   };
+  const tiers: Record<string, Tier> = Object.fromEntries(
+    Object.entries(transferredVariables.tiers ?? {
+      starter: {
+        name: 'Starter',
+        basePrice: 50,
+        credits: 1000,
+        fixedCreditsPerExecution: 10,
+        workspace: 'Shared',
+        features: [
+          '1,000 credits included',
+          '4 credits fixed cost per execution',
+          'Shared workspace',
+          'Pre-built agent templates',
+          'Basic workflow builder',
+          'Standard integrations',
+          'Community support',
+          'Usage analytics'
+        ]
+      },
+      business: {
+        name: 'Business',
+        basePrice: 400,
+        credits: 50000,
+        fixedCreditsPerExecution: 5,
+        workspace: 'Private',
+        features: [
+          '200,000 credits included',
+          '3 credits fixed cost per execution',
+          'Private workspace',
+          'Custom agent development',
+          'Advanced workflow automation',
+          'Premium integrations',
+          'Priority support',
+          'Advanced analytics',
+          'Team collaboration',
+          'API access'
+        ]
+      },
+      enterprise: {
+        name: 'Enterprise',
+        basePrice: 1000,
+        credits: 100000,
+        fixedCreditsPerExecution: 0.5,
+        workspace: 'Private + SSO',
+        features: [
+          '300,000 credits included',
+          '2 credits fixed cost per execution',
+          'Private workspace with SSO',
+          'Role-based access control (RBAC)',
+          'Unlimited custom agents',
+          'Enterprise workflow engine',
+          'Custom integrations',
+          'Dedicated support with SLA',
+          'Custom analytics & reporting',
+          'Advanced security features',
+          'On-premise deployment option'
+        ]
+      }
+    }).map(([key, tier]) => [
+      key,
+      {
+        ...tier,
+        color: tier.color ?? defaultTierMeta[key]?.color,
+        icon: tier.icon ?? defaultTierMeta[key]?.icon
+      }
+    ])
+  );
 
-  // Workflow types with variable credit costs
-  const workflowTypes = [
+  // Workflow types with variable credit costs (use transferred if present)
+  const workflowTypes: WorkflowType[] = transferredVariables.workflowTypes ?? [
     { 
       name: 'Simple Email Classifier', 
       credits: 10, 
@@ -126,8 +165,10 @@ const PricingCalculator = () => {
   ];
 
   const calculateCreditUsage = () => {
-    const currentTier = tiers[selectedTier];
-    const totalCreditsPerExecution = currentTier.fixedCreditsPerExecution + usage.variableCreditsPerExecution;
+    const currentTier = tiers[selectedTier as keyof typeof tiers];
+    const workflow = workflowTypes[selectedWorkflowIndex] ?? workflowTypes[0];
+    const variableCreditsPerExecution = workflow.credits;
+    const totalCreditsPerExecution = currentTier.fixedCreditsPerExecution + variableCreditsPerExecution;
     const totalCreditsNeeded = usage.executions * totalCreditsPerExecution;
     const includedCredits = currentTier.credits;
     
@@ -135,10 +176,9 @@ const PricingCalculator = () => {
     
     // BYOK discount calculation (reduces variable costs by ~50-80% typically)
     if (usage.hasApiKeys && additionalCreditsNeeded > 0) {
-      // Estimate that BYOK saves about 60% on variable costs (LLM calls)
-      // This is a simplified calculation - in reality it depends on the execution mix
-      const variableCreditsInOverage = Math.min(additionalCreditsNeeded, usage.executions * usage.variableCreditsPerExecution);
-      const estimatedSavings = variableCreditsInOverage * 0.6;
+      // Use BYOK savings from transferred variables if present
+      const variableCreditsInOverage = Math.min(additionalCreditsNeeded, usage.executions * variableCreditsPerExecution);
+      const estimatedSavings = variableCreditsInOverage * (BYOK_SAVINGS / 100);
       additionalCreditsNeeded = Math.max(0, additionalCreditsNeeded - estimatedSavings);
     }
     
@@ -153,15 +193,30 @@ const PricingCalculator = () => {
       additionalCreditsAfterByok: additionalCreditsNeeded,
       additionalCreditCost,
       totalCost,
-      creditPacksNeeded: Math.ceil(additionalCreditsNeeded / CREDIT_PACK_SIZE)
+      creditPacksNeeded: Math.ceil(additionalCreditsNeeded / CREDIT_PACK_SIZE),
+      variableCreditsPerExecution
     };
   };
 
   const costBreakdown = calculateCreditUsage();
 
-  const formatNumber = (num) => {
+  const formatNumber = (num: number) => {
     return num.toLocaleString();
   };
+
+  const handleTransferVariables = (variables: TransferredVariables) => {
+    setTransferredVariables(variables);
+    setCurrentView('calculator');
+  };
+
+  // If scenarios view is selected, render the Scenarios component
+  if (currentView === 'scenarios') {
+    return <Scenarios 
+      onBack={() => setCurrentView('calculator')} 
+      onTransferVariables={handleTransferVariables}
+      initialVariables={transferredVariables}
+    />;
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
@@ -172,7 +227,33 @@ const PricingCalculator = () => {
         </div>
         <p className="text-gray-600">Calculate your monthly costs based on credit usage</p>
         <div className="mt-2 text-sm text-gray-500">
-          Needs updated...Credit Rate: $50 per 10,000 credits ($0.004 per credit)
+          Credit Rate: ${CREDIT_PACK_PRICE} per {CREDIT_PACK_SIZE.toLocaleString()} credits (${CREDIT_RATE.toFixed(4)} per credit)
+        </div>
+        
+        {/* Navigation Menu */}
+        <div className="mt-4 flex justify-center gap-2">
+          <button
+            onClick={() => setCurrentView('calculator')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+              currentView === 'calculator'
+                ? 'bg-blue-500 text-white'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            <Calculator className="w-4 h-4" />
+            Calculator
+          </button>
+          <button
+            onClick={() => setCurrentView('scenarios')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+              currentView === 'scenarios'
+                ? 'bg-blue-500 text-white'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            Scenarios
+          </button>
         </div>
       </div>
 
@@ -204,15 +285,12 @@ const PricingCalculator = () => {
                   Agent Workflow Type
                 </label>
                 <select
-                  value={usage.variableCreditsPerExecution}
-                  onChange={(e) => setUsage(prev => ({
-                    ...prev,
-                    variableCreditsPerExecution: parseInt(e.target.value)
-                  }))}
+                  value={selectedWorkflowIndex}
+                  onChange={(e) => setSelectedWorkflowIndex(Number(e.target.value))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  {workflowTypes.map((workflow, index) => (
-                    <option key={index} value={workflow.credits}>
+                  {workflowTypes.map((workflow: WorkflowType, index: number) => (
+                    <option key={index} value={index}>
                       {workflow.name} ({workflow.credits} credits)
                     </option>
                   ))}
@@ -253,10 +331,10 @@ const PricingCalculator = () => {
             <div className="mt-6">
               <h3 className="text-lg font-medium mb-3 text-gray-800">Select Plan</h3>
               <div className="space-y-2">
-                {Object.entries(tiers).map(([key, tier]) => (
+                {Object.entries(tiers).map(([key, tier]: [string, Tier]) => (
                   <button
                     key={key}
-                    onClick={() => setSelectedTier(key)}
+                    onClick={() => setSelectedTier(key as 'starter' | 'business' | 'enterprise')}
                     className={`w-full p-3 rounded-lg border-2 transition-all ${
                       selectedTier === key
                         ? `${tier.color} text-white border-transparent`
@@ -280,7 +358,7 @@ const PricingCalculator = () => {
             <div className="mt-6">
               <h3 className="text-sm font-medium mb-2 text-gray-800">Selected Workflow Details</h3>
               {(() => {
-                const selectedWorkflow = workflowTypes.find(w => w.credits === usage.variableCreditsPerExecution);
+                const selectedWorkflow = workflowTypes[selectedWorkflowIndex];
                 return selectedWorkflow ? (
                   <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-sm">
                     <div className="font-medium text-blue-900">{selectedWorkflow.name}</div>
@@ -357,7 +435,7 @@ const PricingCalculator = () => {
               {costBreakdown.creditPacksNeeded > 0 && (
                 <div className="mt-2 text-xs text-gray-500">
                   Equivalent to {costBreakdown.creditPacksNeeded} credit pack{costBreakdown.creditPacksNeeded !== 1 ? 's' : ''} 
-                  (${costBreakdown.creditPacksNeeded * CREDIT_PACK_PRICE} at $40/10k credits)
+                  (${costBreakdown.creditPacksNeeded * CREDIT_PACK_PRICE} at ${CREDIT_PACK_PRICE}/{CREDIT_PACK_SIZE.toLocaleString()} credits)
                 </div>
               )}
             </div>
@@ -377,7 +455,7 @@ const PricingCalculator = () => {
                   </div>
                   <div className="flex justify-between text-sm mb-1">
                     <span>Variable Credits per Execution</span>
-                    <span className="font-medium">{usage.variableCreditsPerExecution} credits</span>
+                    <span className="font-medium">{costBreakdown.variableCreditsPerExecution} credits</span>
                   </div>
                   <div className="flex justify-between text-sm mb-1 border-t pt-1">
                     <span className="font-medium">Total Credits per Execution</span>
@@ -423,15 +501,17 @@ const PricingCalculator = () => {
             <div className="mb-6">
               <h3 className="text-lg font-medium mb-3 text-gray-800">Cost per Execution Across Tiers</h3>
               <div className="grid grid-cols-3 gap-4">
-                {Object.entries(tiers).map(([tierKey, tier]) => {
-                  const tierCreditsPerExecution = tier.fixedCreditsPerExecution + usage.variableCreditsPerExecution;
+                {Object.entries(tiers).map(([tierKey, tier]: [string, Tier]) => {
+                  const workflow = workflowTypes[selectedWorkflowIndex] ?? workflowTypes[0];
+                  const variableCreditsPerExecution = workflow.credits;
+                  const tierCreditsPerExecution = tier.fixedCreditsPerExecution + variableCreditsPerExecution;
                   const tierCostPerExecution = tierCreditsPerExecution * CREDIT_RATE;
                   const isCurrentTier = tierKey === selectedTier;
                   
                   return (
                     <div key={tierKey} className={`p-3 rounded-lg border-2 ${isCurrentTier ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
                       <div className="text-sm font-medium text-gray-800">{tier.name}</div>
-                      <div className="text-xs text-gray-600">{tier.fixedCreditsPerExecution} + {usage.variableCreditsPerExecution} credits</div>
+                      <div className="text-xs text-gray-600">{tier.fixedCreditsPerExecution} + {variableCreditsPerExecution} credits</div>
                       <div className="text-sm font-bold text-gray-800">${tierCostPerExecution.toFixed(3)}/execution</div>
                     </div>
                   );
@@ -446,7 +526,7 @@ const PricingCalculator = () => {
             <div>
               <h3 className="text-lg font-medium mb-3 text-gray-800">Plan Features</h3>
               <div className="grid sm:grid-cols-2 gap-2">
-                {tiers[selectedTier].features.map((feature, index) => (
+                {(tiers[selectedTier].features ?? []).map((feature: string, index: number) => (
                   <div key={index} className="flex items-center gap-2 text-sm text-gray-600">
                     <div className="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" />
                     {feature}
@@ -466,9 +546,9 @@ const PricingCalculator = () => {
             <h3 className="font-medium text-gray-800 mb-2">Execution Costs</h3>
             <div className="text-sm text-gray-600 space-y-2">
               <div><strong>Fixed Cost per Execution:</strong></div>
-              <div>• Starter: 4 credits</div>
-              <div>• Business: 3 credits</div> 
-              <div>• Enterprise: 2 credits</div>
+              <div>• Starter: {tiers.starter.fixedCreditsPerExecution} credits</div>
+              <div>• Business: {tiers.business.fixedCreditsPerExecution} credits</div> 
+              <div>• Enterprise: {tiers.enterprise.fixedCreditsPerExecution} credits</div>
               <div className="pt-2"><strong>Variable Costs:</strong></div>
               <div>• LLM calls: Provider cost + 20% markup</div>
               <div>• Compute steps: 1 credit each (limited time)</div>
@@ -479,9 +559,9 @@ const PricingCalculator = () => {
             <h3 className="font-medium text-gray-800 mb-2">Additional Credits</h3>
             <div className="text-sm text-gray-600 space-y-2">
               <div>When you exceed your monthly allowance:</div>
-              <div>• Purchase credit packs: $40 per 10,000 credits</div>
-              <div>• Or pay overage at $0.004 per credit</div>
-              <div>• BYOK can reduce overage costs significantly</div>
+              <div>• Purchase credit packs: ${CREDIT_PACK_PRICE} per {CREDIT_PACK_SIZE.toLocaleString()} credits</div>
+              <div>• Or pay overage at ${CREDIT_RATE.toFixed(4)} per credit</div>
+              <div>• BYOK can reduce overage costs by approximately {BYOK_SAVINGS}%</div>
               <div className="pt-2 text-blue-600">
                 <strong>Pro tip:</strong> Bring your own OpenAI/Anthropic API keys to save on variable costs!
               </div>
