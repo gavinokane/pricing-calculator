@@ -33,4 +33,4 @@ jobs:
         app-name: 'doozerpricingcalculatorv1'
         slot-name: 'production'
         publish-profile: ${{ secrets.AzureAppService_PublishProfile_0a3d86e1d430486599236bb599c155fe }}
-        package: .
+        package: dist
