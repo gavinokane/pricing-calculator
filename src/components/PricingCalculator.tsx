@@ -29,8 +29,8 @@ interface TransferredVariables {
 }
 
 const PricingCalculator = () => {
-  type ViewType = 'calculator' | 'scenarios';
-  const [currentView, setCurrentView] = useState<ViewType>('calculator');
+  type ViewType = "calculator" | "scenarios";
+  const [currentView, setCurrentView] = useState<ViewType>("calculator");
   const [transferredVariables, setTransferredVariables] = useState<TransferredVariables>({});
   const [usage, setUsage] = useState({
     executions: 500,
@@ -237,7 +237,7 @@ const PricingCalculator = () => {
         {/* Navigation Menu */}
         <div className="mt-4 flex justify-center gap-2">
           <button
-            onClick={() => setCurrentView('calculator')}
+            onClick={() => setCurrentView("calculator" as ViewType)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
               currentView === "calculator"
                 ? "bg-blue-500 text-white"
@@ -248,9 +248,9 @@ const PricingCalculator = () => {
             Calculator
           </button>
           <button
-            onClick={() => setCurrentView('scenarios')}
+            onClick={() => setCurrentView("scenarios" as ViewType)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-              currentView === "scenarios"
+              currentView === ("scenarios" as ViewType)
                 ? "bg-blue-500 text-white"
                 : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
             }`}
