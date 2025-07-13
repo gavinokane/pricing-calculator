@@ -116,7 +116,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
         // For tiers, use persisted data directly without merging with defaults
         if (persisted.tiers) {
           console.log("[Scenarios] ADMIN MODE: Setting tiers from persisted:", persisted.tiers);
-          setTiers(tiers => {
+          setTiers(() => {
             const newTiers = persisted.tiers;
             console.log("[Scenarios] ADMIN MODE: tiers state after setTiers:", newTiers);
             return newTiers;
@@ -334,7 +334,6 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
     } catch (e) {
       console.error("[Scenarios] Error persisting to localStorage:", e);
     }
-    // eslint-disable-next-line
   }, [_creditRate, _creditPackSize, _byokSavings, _tiers, _workflowTypes, _scenarios, hasLoaded]);
 
 
