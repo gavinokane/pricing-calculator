@@ -870,65 +870,8 @@ BYOK reduces the variable portion of overage credits by ${_byokSavings}%`}
         </div>
       </div>
 
-      {/* Chart Analysis Section */}
-
-      <div className="mb-0">
-        <ChartControls
-          workflowTypes={_workflowTypes}
-          selectedWorkflowIndex={chartWorkflowIndex}
-          onWorkflowChange={setChartWorkflowIndex}
-          fixedExecutions={chartFixedExecutions}
-          onExecutionsChange={setChartFixedExecutions}
-          maxExecutions={chartMaxExecutions}
-          onMaxExecutionsChange={setChartMaxExecutions}
-          activeChartSection={activeChartSection}
-          onChartSectionChange={setActiveChartSection}
-        />
-      </div>
-
-      {/* Dynamic Chart Rendering */}
-      {activeChartSection === 'volume' && (
-        <CostVolumeChart
-          tiers={_tiers}
-          workflowTypes={_workflowTypes}
-          selectedWorkflowIndex={chartWorkflowIndex}
-          creditRate={_creditRate}
-          byokSavings={_byokSavings}
-          maxExecutions={chartMaxExecutions}
-        />
-      )}
-
-      {activeChartSection === 'efficiency' && (
-        <EfficiencyCharts
-          tiers={_tiers}
-          workflowTypes={_workflowTypes}
-          selectedWorkflowIndex={chartWorkflowIndex}
-          creditRate={_creditRate}
-          byokSavings={_byokSavings}
-          fixedExecutions={chartFixedExecutions}
-        />
-      )}
-
-      {activeChartSection === 'comparison' && (
-        <ComparisonCharts
-          tiers={_tiers}
-          workflowTypes={_workflowTypes}
-          creditRate={_creditRate}
-          byokSavings={_byokSavings}
-          fixedExecutions={chartFixedExecutions}
-        />
-      )}
-
-      {activeChartSection === 'breakeven' && (
-        <BreakEvenChart
-          tiers={_tiers}
-          workflowTypes={_workflowTypes}
-          selectedWorkflowIndex={chartWorkflowIndex}
-          creditRate={_creditRate}
-          byokSavings={_byokSavings}
-          maxExecutions={chartMaxExecutions}
-        />
-      )}
+      {/* Chart Analysis Section (temporarily hidden) */}
+      {/* ChartControls and all chart components are hidden for now */}
     </div>
   );
 };
