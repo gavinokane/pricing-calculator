@@ -20,14 +20,17 @@ const EfficiencyCharts: React.FC<EfficiencyChartsProps> = ({
   byokSavings,
   fixedExecutions = 1000
 }) => {
+  // Chart data point type
+  type EfficiencyDataPoint = { executions: number; [key: string]: number };
+
   // Cost per execution data across volumes
   const generateCostPerExecutionData = () => {
-    const points = [];
+    const points: EfficiencyDataPoint[] = [];
     const maxExecutions = 5000;
     const step = Math.max(1, Math.floor(maxExecutions / 30));
     
     for (let executions = step; executions <= maxExecutions; executions += step) {
-      const dataPoint: any = { executions };
+      const dataPoint: EfficiencyDataPoint = { executions };
       
       Object.entries(tiers).forEach(([tierKey, tier]) => {
         const result = calculateScenario(

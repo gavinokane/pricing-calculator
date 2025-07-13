@@ -26,7 +26,12 @@ const PricingCalculator = () => {
   });
 
   // ROI report loading state
-  const [loadedRoiReport, setLoadedRoiReport] = useState<any | null>(null);
+  interface LoadedRoiReport {
+    roiResults?: any;
+    scenarioVariables?: any;
+    roiInputs?: any;
+  }
+  const [loadedRoiReport, setLoadedRoiReport] = useState<LoadedRoiReport | null>(null);
   const [loadingRoi, setLoadingRoi] = useState(false);
 
   // Auto-load variables from URL (id, data, or roi) on mount

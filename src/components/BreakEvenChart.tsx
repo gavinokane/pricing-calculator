@@ -81,13 +81,16 @@ const BreakEvenChart: React.FC<BreakEvenChartProps> = ({
     return breakEvenPoints;
   };
 
+  // Chart data point type
+  type ChartDataPoint = { executions: number; [key: string]: number };
+
   // Generate chart data
   const generateChartData = () => {
-    const points = [];
+    const points: ChartDataPoint[] = [];
     const step = Math.max(1, Math.floor(maxExecutions / 100));
     
     for (let executions = step; executions <= maxExecutions; executions += step) {
-      const dataPoint: any = { executions };
+      const dataPoint: ChartDataPoint = { executions };
       
       Object.entries(tiers).forEach(([tierKey, tier]) => {
         const result = calculateScenario(
@@ -112,11 +115,11 @@ const BreakEvenChart: React.FC<BreakEvenChartProps> = ({
 
   // Generate efficiency comparison data (cost per execution)
   const generateEfficiencyData = () => {
-    const points = [];
+    const points: ChartDataPoint[] = [];
     const step = Math.max(1, Math.floor(maxExecutions / 100));
     
     for (let executions = step; executions <= maxExecutions; executions += step) {
-      const dataPoint: any = { executions };
+      const dataPoint: ChartDataPoint = { executions };
       
       Object.entries(tiers).forEach(([tierKey, tier]) => {
         const result = calculateScenario(

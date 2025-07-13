@@ -20,15 +20,18 @@ const CostVolumeChart: React.FC<CostVolumeChartProps> = ({
   byokSavings,
   maxExecutions = 5000
 }) => {
+  // Chart data point type
+  type CostVolumeDataPoint = { executions: number; [key: string]: number };
+
   // Generate data points for the chart
   const generateDataPoints = () => {
-    const points = [];
+    const points: CostVolumeDataPoint[] = [];
     const step = Math.max(1, Math.floor(maxExecutions / 50)); // 50 data points max
     
     for (let executions = 0; executions <= maxExecutions; executions += step) {
       if (executions === 0) executions = 1; // Avoid division by zero
       
-      const dataPoint: any = { executions };
+      const dataPoint: CostVolumeDataPoint = { executions };
       
       Object.entries(tiers).forEach(([tierKey, tier]) => {
         // Without BYOK

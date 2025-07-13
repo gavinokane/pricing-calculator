@@ -67,9 +67,16 @@ const ComparisonCharts: React.FC<ComparisonChartsProps> = ({
   };
 
   // Workflow Type Comparison Matrix (Heatmap-style data)
+  type WorkflowComparisonData = {
+    workflow: string;
+    credits: number;
+    complexity: string;
+    [key: string]: string | number;
+  };
+
   const generateWorkflowComparisonData = () => {
     return workflowTypes.map((workflow, workflowIndex) => {
-      const workflowData: any = {
+      const workflowData: WorkflowComparisonData = {
         workflow: workflow.name,
         credits: workflow.credits,
         complexity: workflow.credits > 100 ? 'High' : workflow.credits > 50 ? 'Medium' : 'Low'

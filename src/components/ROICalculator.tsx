@@ -14,14 +14,24 @@ const formatCurrency = (n: number) =>
 
 import { ViewType, TransferredVariables } from "./types";
 
+interface RoiInputs {
+  hoursPerWeek?: number;
+  numPeople?: number;
+  hourlyRate?: number;
+  automationLevel?: number;
+  errorRate?: number;
+  errorCost?: number;
+  implementationCost?: number;
+}
+
 interface ROICalculatorProps {
   onNavigate: (view: ViewType) => void;
   currentView?: ViewType;
   annualDoozerCost?: number;
   scenarioVariables?: TransferredVariables;
   hideBackButton?: boolean;
-  loadedRoiInputs?: any;
-  loadedRoiResults?: any;
+  loadedRoiInputs?: RoiInputs;
+  loadedRoiResults?: unknown;
 }
 
 const ROICalculator: React.FC<ROICalculatorProps> = ({
