@@ -3,11 +3,7 @@ import { Calculator, Settings, Plus, Trash2, RotateCcw, ArrowLeft } from 'lucide
 import { Tier, WorkflowType, Scenario, TransferredVariables } from './types';
 import { SCENARIO_STORAGE_KEY, DEFAULT_TIERS, DEFAULT_WORKFLOW_TYPES } from './constants';
 import { calculateScenario, formatNumber } from './utils';
-import ChartControls from './ChartControls';
-import CostVolumeChart from './CostVolumeChart';
-import EfficiencyCharts from './EfficiencyCharts';
-import ComparisonCharts from './ComparisonCharts';
-import BreakEvenChart from './BreakEvenChart';
+/* ChartControls and chart components imports removed while hidden */
 
 interface ScenariosProps {
   onBack?: () => void;
@@ -216,11 +212,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
   const [comparisonExecutions, setComparisonExecutions] = useState(1000);
   const [comparisonWorkflowIndex, setComparisonWorkflowIndex] = useState(0);
 
-  // Chart controls state
-  const [activeChartSection, setActiveChartSection] = useState('volume');
-  const [chartWorkflowIndex, setChartWorkflowIndex] = useState(0);
-  const [chartFixedExecutions, setChartFixedExecutions] = useState(1000);
-  const [chartMaxExecutions, setChartMaxExecutions] = useState(5000);
+  // Chart controls state removed while charts are hidden
 
   const updateTier = (tierKey: string, property: keyof Tier, value: string | number) => {
     console.log("[Scenarios] updateTier called:", { tierKey, property, value });
