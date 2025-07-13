@@ -42,4 +42,4 @@ export interface Scenario {
   costPerExecution: number;
 }
 
-export type ViewType = "calculator" | "scenarios" | "feature-comparison";
+export type ViewType = "calculator" | "scenarios" | "feature-comparison" | "roi-calculator";

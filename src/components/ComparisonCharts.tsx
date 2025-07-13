@@ -109,11 +109,12 @@ const ComparisonCharts: React.FC<ComparisonChartsProps> = ({
   const tierColors = {
     'Starter': '#3b82f6',
     'Business': '#8b5cf6', 
+    'Professional': '#14b8a6',
     'Enterprise': '#f59e0b'
   };
 
   const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
-  const formatPercent = (value: number) => `${value.toFixed(1)}%`;
+  
 
   // Get color based on tier for BYOK chart
   const getBarColor = (tierName: string) => {
@@ -206,14 +207,18 @@ const ComparisonCharts: React.FC<ComparisonChartsProps> = ({
               />
               <Legend />
               
-              {Object.entries(tiers).map(([tierKey, tier]) => (
-                <Bar
-                  key={tierKey}
-                  dataKey={tier.name}
-                  fill={tierColors[tier.name as keyof typeof tierColors]}
-                  name={tier.name}
-                />
-              ))}
+              {['starter', 'professional', 'business', 'enterprise'].map((tierKey) => {
+                const tier = tiers[tierKey];
+                if (!tier) return null;
+                return (
+                  <Bar
+                    key={tierKey}
+                    dataKey={tier.name}
+                    fill={tierColors[tier.name as keyof typeof tierColors]}
+                    name={tier.name}
+                  />
+                );
+              })}
             </BarChart>
           </ResponsiveContainer>
         </div>

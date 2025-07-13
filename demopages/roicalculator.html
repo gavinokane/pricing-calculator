@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doozer AI ROI Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #1e293b;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 30px;
+            background: white;
+            border-radius: 8px;
+            padding: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .tab:not(.active) {
+            color: #64748b;
+        }
+
+        .tab:not(.active):hover {
+            background: #f1f5f9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .calculator-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .results-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .slider-container {
+            margin-top: 8px;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e5e7eb;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+        }
+
+        .slider-value {
+            text-align: center;
+            font-weight: 600;
+            color: #3b82f6;
+            margin-top: 4px;
+        }
+
+        .advanced-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 24px 0;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .advanced-toggle:hover {
+            background: #f1f5f9;
+        }
+
+        .advanced-toggle input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+        }
+
+        .advanced-options {
+            display: none;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+
+        .advanced-options.visible {
+            display: block;
+        }
+
+        .calculate-btn {
+            width: 100%;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .calculate-btn:hover {
+            background: #2563eb;
+        }
+
+        .roi-summary {
+            text-align: center;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .roi-main-section {
+            flex: 1;
+        }
+
+        .roi-main-metric {
+            font-size: 48px;
+            font-weight: 700;
+            color: #059669;
+            margin-bottom: 8px;
+        }
+
+        .roi-subtitle {
+            font-size: 16px;
+            color: #64748b;
+            margin-bottom: 20px;
+        }
+
+        .roi-explanation {
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 13px;
+            color: #0369a1;
+            max-width: 200px;
+            text-align: left;
+            line-height: 1.4;
+        }
+
+        .roi-explanation strong {
+            color: #1e40af;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .metric-card {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .metric-label {
+            font-size: 12px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .breakdown {
+            border-top: 1px solid #e5e7eb;
+            padding-top: 20px;
+        }
+
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .breakdown-label {
+            font-size: 14px;
+            color: #374151;
+            text-align: left;
+            flex: 1;
+            cursor: help;
+            position: relative;
+        }
+
+        .breakdown-label:hover {
+            color: #1e293b;
+        }
+
+        .breakdown-label[data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 0;
+            top: 100%;
+            background: #1e293b;
+            color: white;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: pre-line;
+            z-index: 1000;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 4px;
+            max-width: 400px;
+            line-height: 1.4;
+        }
+
+        .breakdown-label[data-tooltip]:hover::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 100%;
+            border: 4px solid transparent;
+            border-bottom-color: #1e293b;
+            z-index: 1001;
+        }
+
+        .breakdown-value {
+            font-weight: 600;
+            color: #1e293b;
+            text-align: right;
+            min-width: 80px;
+        }
+
+        .savings {
+            color: #059669;
+        }
+
+        .cost {
+            color: #dc2626;
+        }
+
+        .export-btn {
+            width: 100%;
+            background: #f1f5f9;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 16px;
+        }
+
+        .export-btn:hover {
+            background: #e2e8f0;
+            border-color: #9ca3af;
+        }
+
+        .workflow-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .input-group .form-group {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧮 Doozer AI ROI Calculator</h1>
+            <p>Calculate return on investment for AI automation</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab">Calculator</button>
+            <button class="tab">Scenarios</button>
+            <button class="tab">Feature Comparison</button>
+            <button class="tab active">ROI Calculator</button>
+        </div>
+
+        <div class="main-content">
+            <div class="calculator-panel">
+                <div class="section-title">Current Process</div>
+                
+                <div class="form-group">
+                    <label class="form-label">Hours per week spent on this process</label>
+                    <input type="number" class="form-input" id="hoursPerWeek" value="40" min="1" max="168">
+                </div>
+
+                <div class="input-group">
+                    <div class="form-group">
+                        <label class="form-label">Number of people</label>
+                        <input type="number" class="form-input" id="numPeople" value="3" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Average hourly rate</label>
+                        <input type="number" class="form-input" id="hourlyRate" value="35" min="1" step="0.01">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Expected automation level</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="automationLevel" min="50" max="95" value="85">
+                        <div class="slider-value"><span id="automationValue">85</span>%</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Doozer workflow type</label>
+                    <select class="form-input" id="workflowType">
+                        <option value="email">Simple Email Classifier (10 credits)</option>
+                        <option value="data">Basic Data Processing (15 credits)</option>
+                        <option value="content">Content Summarization (25 credits)</option>
+                        <option value="document">Document Review (30 credits)</option>
+                        <option value="complex">Complex Multi-Step Agent (100 credits)</option>
+                    </select>
+                </div>
+
+                <div class="section-title" style="margin-top: 24px;">Error & Quality Factors</div>
+                
+                <div class="input-group">
+                    <div class="form-group">
+                        <label class="form-label">Current error rate (%)</label>
+                        <input type="number" class="form-input" id="errorRate" value="3" min="0" max="100" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Cost per error ($)</label>
+                        <input type="number" class="form-input" id="errorCost" value="70" min="0" step="0.01">
+                    </div>
+                </div>
+
+                <div class="section-title">Implementation</div>
+                
+                <div class="form-group">
+                    <label class="form-label">One-time implementation cost ($)</label>
+                    <input type="number" class="form-input" id="implementationCost" value="5000" min="0" step="100">
+                </div>
+            </div>
+
+            <div class="results-panel">
+                <div class="roi-summary">
+                    <div class="roi-main-section">
+                        <div class="roi-main-metric" id="roiPercent">387%</div>
+                        <div class="roi-subtitle">Return on Investment</div>
+                    </div>
+                    <div class="roi-explanation">
+                        <strong>What this means:</strong><br>
+                        For every $1 spent on Doozer, you get back <strong id="roiMultiple">$3.87</strong> in benefits<br><br>
+                        <span id="roiContext">Outstanding investment - most business investments target 15-25% ROI</span>
+                    </div>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value savings" id="annualSavings">$182,520</div>
+                        <div class="metric-label">Annual Savings</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="paybackPeriod">3.1</div>
+                        <div class="metric-label">Payback (Months)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="hoursFreed">102</div>
+                        <div class="metric-label">Hours Freed/Week</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="doozerCost">$47,100</div>
+                        <div class="metric-label">Annual Doozer Cost</div>
+                    </div>
+                </div>
+
+                <div class="breakdown">
+                    <div class="section-title">Cost Breakdown</div>
+                    
+                    <div class="breakdown-item">
+                        <span class="breakdown-label" data-tooltip="Hours/week × People × (Hourly rate × 1.3 benefits) × 52 weeks">Current annual labor cost</span>
+                        <span class="breakdown-value cost" id="currentCost">$218,400</span>
+                    </div>
+                    
+                    <div class="breakdown-item">
+                        <span class="breakdown-label" data-tooltip="Annual labor cost × Error rate × Cost multiplier">Error-related costs</span>
+                        <span class="breakdown-value cost" id="errorCosts">$10,920</span>
+                    </div>
+                    
+                    <div class="breakdown-item">
+                        <span class="breakdown-label" data-tooltip="Current labor cost + Error costs">Total current costs</span>
+                        <span class="breakdown-value cost" id="totalCurrentCost">$229,320</span>
+                    </div>
+                    
+                    <div class="breakdown-item">
+                        <span class="breakdown-label" data-tooltip="Current labor cost × (1 - Automation %) - work humans still do">Remaining labor costs</span>
+                        <span class="breakdown-value" id="remainingCost">$32,760</span>
+                    </div>
+                    
+                    <div class="breakdown-item">
+                        <span class="breakdown-label" data-tooltip="Based on executions needed and Doozer pricing tiers">Doozer subscription (annual)</span>
+                        <span class="breakdown-value" id="doozerSubscription">$47,100</span>
+                    </div>
+                    
+                    <div class="breakdown-item">
+                        <span class="breakdown-label" data-tooltip="One-time cost for setup, integration, and training">Implementation cost (one-time)</span>
+                        <span class="breakdown-value" id="implementationCostDisplay">$5,000</span>
+                    </div>
+                    
+                    <div class="breakdown-item" style="border-top: 2px solid #059669; margin-top: 8px; padding-top: 12px;">
+                        <span class="breakdown-label" data-tooltip="Total current costs - (Remaining labor + Doozer subscription)"><strong>Net annual savings</strong></span>
+                        <span class="breakdown-value savings" id="netSavings"><strong>$149,460</strong></span>
+                    </div>
+                    
+                    <div class="breakdown-item">
+                        <span class="breakdown-label" data-tooltip="Annual Doozer cost + One-time implementation cost"><strong>Total first-year investment</strong></span>
+                        <span class="breakdown-value" id="totalInvestment"><strong>$52,100</strong></span>
+                    </div>
+                </div>
+
+                <button class="export-btn" onclick="exportReport()">📊 Export ROI Report</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Workflow configuration with defaults
+        const workflowConfig = {
+            email: { credits: 10, errorRate: 2, ceiling: 90 },
+            data: { credits: 15, errorRate: 5, ceiling: 85 },
+            content: { credits: 25, errorRate: 3, ceiling: 88 },
+            document: { credits: 30, errorRate: 4, ceiling: 80 },
+            complex: { credits: 100, errorRate: 2, ceiling: 92 }
+        };
+
+        // Update automation slider display
+        document.getElementById('automationLevel').addEventListener('input', function() {
+            document.getElementById('automationValue').textContent = this.value;
+        });
+
+        // Toggle advanced options
+        function toggleAdvanced() {
+            // Function no longer needed - keeping for backwards compatibility
+        }
+
+        // Auto-calculate on input changes
+        document.querySelectorAll('input, select').forEach(element => {
+            element.addEventListener('input', calculateROI);
+            element.addEventListener('change', calculateROI);
+        });
+
+        // Double-check implementation cost field specifically
+        setTimeout(() => {
+            const implField = document.getElementById('implementationCost');
+            if (implField) {
+                // Remove any existing listeners and add fresh ones
+                implField.removeEventListener('input', calculateROI);
+                implField.removeEventListener('change', calculateROI);
+                
+                // Add fresh listeners with debugging
+                implField.addEventListener('input', function(e) {
+                    console.log('Implementation cost input event triggered:', e.target.value);
+                    try {
+                        calculateROI();
+                    } catch (error) {
+                        console.error('Error in calculateROI:', error);
+                    }
+                });
+                implField.addEventListener('change', function(e) {
+                    console.log('Implementation cost change event triggered:', e.target.value);
+                    try {
+                        calculateROI();
+                    } catch (error) {
+                        console.error('Error in calculateROI:', error);
+                    }
+                });
+                implField.addEventListener('keyup', function(e) {
+                    console.log('Implementation cost keyup event triggered:', e.target.value);
+                    try {
+                        calculateROI();
+                    } catch (error) {
+                        console.error('Error in calculateROI:', error);
+                    }
+                });
+                console.log('Implementation cost field event listeners added');
+            } else {
+                console.log('Implementation cost field NOT found');
+            }
+        }, 100);
+
+        function calculateROI() {
+            console.log('calculateROI function started');
+            
+            // Get input values
+            const hoursPerWeek = parseFloat(document.getElementById('hoursPerWeek').value) || 40;
+            const numPeople = parseInt(document.getElementById('numPeople').value) || 3;
+            const hourlyRate = parseFloat(document.getElementById('hourlyRate').value) || 35;
+            const automationLevel = parseInt(document.getElementById('automationLevel').value) || 85;
+            const workflowType = document.getElementById('workflowType').value;
+
+            console.log('Basic inputs collected');
+
+            // Get all additional inputs (now always visible)
+            const errorRate = parseFloat(document.getElementById('errorRate').value) || workflowConfig[workflowType].errorRate;
+            const errorCost = parseFloat(document.getElementById('errorCost').value) || (hourlyRate * 2);
+            const implementationCost = parseFloat(document.getElementById('implementationCost').value) || 5000;
+
+            console.log('Advanced inputs collected, implementationCost:', implementationCost);
+
+            // Calculations
+            const benefitsMultiplier = 1.3; // 30% benefits/overhead
+            const totalHourlyRate = hourlyRate * benefitsMultiplier;
+            
+            console.log('Starting calculations...');
+            
+            // Current costs
+            const annualLaborCost = hoursPerWeek * numPeople * totalHourlyRate * 52;
+            const annualErrorCost = (annualLaborCost * (errorRate / 100)) * (errorCost / hourlyRate);
+            const totalCurrentCost = annualLaborCost + annualErrorCost;
+
+            console.log('Current costs calculated');
+
+            // Post-automation costs
+            const automationPercent = automationLevel / 100;
+            const remainingLaborCost = annualLaborCost * (1 - automationPercent);
+            
+            console.log('Post-automation costs calculated');
+            
+            // Doozer cost calculation using actual pricing tiers
+            const executionsPerHour = workflowType === 'email' ? 12 : 
+                                    workflowType === 'data' ? 8 : 
+                                    workflowType === 'content' ? 4 : 
+                                    workflowType === 'document' ? 3 : 2; // complex
+            
+            console.log('Executions per hour determined:', executionsPerHour);
+            
+            const weeklyExecutions = hoursPerWeek * numPeople * executionsPerHour;
+            const annualExecutions = weeklyExecutions * 52;
+            const creditsPerExecution = workflowConfig[workflowType].credits;
+            const totalCreditsNeeded = annualExecutions * creditsPerExecution;
+            
+            console.log('Credits calculation completed, total needed:', totalCreditsNeeded);
+            console.log('Calculation breakdown:', {
+                hoursPerWeek,
+                numPeople,
+                executionsPerHour,
+                weeklyExecutions,
+                annualExecutions,
+                creditsPerExecution
+            });
+            
+            // Safety check for unrealistic credit amounts
+            if (totalCreditsNeeded > 10000000) {
+                console.error('ERROR: Unrealistic credit amount calculated:', totalCreditsNeeded);
+                return; // Exit function early
+            }
+            
+            // Determine pricing tier based on credits needed
+            let annualDoozerCost, tierName, includedCredits, overageCredits = 0;
+            
+            console.log('Starting pricing tier determination for', totalCreditsNeeded, 'credits');
+            
+            if (totalCreditsNeeded <= 1000) {
+                // Starter: $50/month, 1,000 credits
+                annualDoozerCost = 50 * 12;
+                tierName = "Starter";
+                includedCredits = 1000;
+                console.log('Selected Starter tier');
+            } else if (totalCreditsNeeded <= 50000) {
+                // Professional: $400/month, 50,000 credits
+                annualDoozerCost = 400 * 12;
+                tierName = "Professional";
+                includedCredits = 50000;
+                console.log('Selected Professional tier');
+            } else if (totalCreditsNeeded <= 75000) {
+                // Business: $700/month, 75,000 credits
+                annualDoozerCost = 700 * 12;
+                tierName = "Business";
+                includedCredits = 75000;
+                console.log('Selected Business tier');
+            } else {
+                // Enterprise: $1000/month, 100,000 credits
+                // For credits over 100k, add overage at $0.01/credit
+                annualDoozerCost = 1000 * 12;
+                tierName = "Enterprise";
+                includedCredits = 100000;
+                console.log('Selected Enterprise tier');
+                if (totalCreditsNeeded > 100000) {
+                    overageCredits = totalCreditsNeeded - 100000;
+                    annualDoozerCost += overageCredits * 0.01;
+                    console.log('Added overage charges for', overageCredits, 'credits');
+                }
+            }
+            
+            console.log('Pricing tier calculation completed, annual cost:', annualDoozerCost);
+
+            // ROI calculations with implementation costs
+            const totalNewCost = remainingLaborCost + annualDoozerCost;
+            const netAnnualSavings = totalCurrentCost - totalNewCost;
+            const totalFirstYearInvestment = annualDoozerCost + implementationCost;
+            
+            console.log('ROI calculations completed');
+            
+            // ROI based on total first-year investment including implementation
+            const roiPercent = netAnnualSavings > 0 ? ((netAnnualSavings / totalFirstYearInvestment) * 100) : 0;
+            const paybackMonths = totalFirstYearInvestment > 0 ? (totalFirstYearInvestment / (netAnnualSavings / 12)) : 0;
+            const hoursFreedPerWeek = hoursPerWeek * automationPercent;
+
+            console.log('About to update display...');
+            console.log('Key values:', {
+                netAnnualSavings,
+                totalFirstYearInvestment,
+                roiPercent,
+                paybackMonths
+            });
+
+            // Update display
+            document.getElementById('roiPercent').textContent = `${Math.round(roiPercent)}%`;
+            document.getElementById('annualSavings').textContent = `${netAnnualSavings.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            document.getElementById('paybackPeriod').textContent = paybackMonths > 0 ? paybackMonths.toFixed(1) : 'N/A';
+            document.getElementById('hoursFreed').textContent = Math.round(hoursFreedPerWeek);
+            document.getElementById('doozerCost').textContent = `${annualDoozerCost.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+
+            // Breakdown
+            document.getElementById('currentCost').textContent = `${annualLaborCost.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            document.getElementById('errorCosts').textContent = `${annualErrorCost.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            document.getElementById('totalCurrentCost').textContent = `${totalCurrentCost.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            document.getElementById('remainingCost').textContent = `${remainingLaborCost.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            document.getElementById('doozerSubscription').textContent = `${annualDoozerCost.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+            document.getElementById('netSavings').textContent = `${netAnnualSavings.toLocaleString(undefined, {maximumFractionDigits: 0})}`;
+        }
+
+        function exportReport() {
+            alert('ROI Report exported! (In a real app, this would generate a PDF or Excel file)');
+        }
+
+        // Initialize with default calculation
+        calculateROI();
+    </script>
+</body>
+</html>

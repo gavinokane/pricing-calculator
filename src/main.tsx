@@ -1,10 +1,10 @@
 ﻿import React from 'react'
 import ReactDOM from 'react-dom/client'
-import PricingCalculator from './components/PricingCalculator.tsx'
+import AccessControlWrapper from './components/AccessControlWrapper.tsx'
 import './styles/index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <PricingCalculator />
+    <AccessControlWrapper />
   </React.StrictMode>,
 )

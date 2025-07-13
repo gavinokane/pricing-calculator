@@ -21,11 +21,14 @@ jobs:
       with:
         node-version: '18.x'
     
-    - name: npm install, build, and test
-      run: |
-        npm install
-        npm run build --if-present
-        npm run test --if-present
+    - name: npm install
+      run: npm install
+
+    - name: Lint code
+      run: npm run lint
+
+    - name: Build (type check and bundle)
+      run: npm run build
 
     - name: Add .skipOryxBuild to dist
       run: echo "" > dist/.skipOryxBuild

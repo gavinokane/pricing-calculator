@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, BarChart3 } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 import { WorkflowType } from './types';
 
 interface ChartControlsProps {

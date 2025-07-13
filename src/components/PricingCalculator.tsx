@@ -1,5 +1,5 @@
-﻿import React, { useState } from 'react';
-import { Calculator, Zap, Building, Crown, Key, Info, Settings } from 'lucide-react';
+﻿import { useState } from 'react';
+import { Calculator, Zap, Key, Info, Settings } from 'lucide-react';
 import { Tier, WorkflowType, TransferredVariables, ViewType } from './types';
 import { 
   DEFAULT_CREDIT_RATE, 
@@ -13,6 +13,9 @@ import {
 import { formatNumber, calculateCreditUsage } from './utils';
 import Scenarios from './Scenarios';
 import FeatureComparison from './FeatureComparison';
+import ROICalculator from './ROICalculator';
+
+import { useEffect } from 'react';
 
 const PricingCalculator = () => {
   const [currentView, setCurrentView] = useState<ViewType>("calculator");
@@ -21,8 +24,66 @@ const PricingCalculator = () => {
     executions: 500,
     hasApiKeys: false
   });
+
+  // ROI report loading state
+  const [loadedRoiReport, setLoadedRoiReport] = useState<any | null>(null);
+  const [loadingRoi, setLoadingRoi] = useState(false);
+
+  // Auto-load variables from URL (id, data, or roi) on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
+    const base64 = params.get("data");
+    const roi = params.get("roi");
+    if (roi) {
+      setLoadingRoi(true);
+      fetch(`/api/roi-report/${roi}`)
+        .then(res => res.ok ? res.json() : Promise.reject("Not found"))
+        .then(json => setLoadedRoiReport(json))
+        .catch(() => setLoadedRoiReport(null))
+        .finally(() => setLoadingRoi(false));
+      return;
+    }
+    if (id) {
+      // Load from backend
+      (async () => {
+        try {
+          const url = `/api/scenario-config/${id}`;
+          const res = await fetch(url);
+          if (res.ok) {
+            const json = await res.json();
+            if (typeof json === "object" && json) {
+              setTransferredVariables({
+                creditRate: json.creditRate,
+                creditPackSize: json.creditPackSize,
+                creditPackPrice: json.creditRate * json.creditPackSize,
+                byokSavings: json.byokSavings,
+                tiers: json.tiers,
+                workflowTypes: json.workflowTypes
+              });
+            }
+          }
+        } catch {}
+      })();
+    } else if (base64) {
+      try {
+        const json = JSON.parse(atob(base64));
+        if (typeof json === "object" && json) {
+          setTransferredVariables({
+            creditRate: json.creditRate,
+            creditPackSize: json.creditPackSize,
+            creditPackPrice: json.creditRate * json.creditPackSize,
+            byokSavings: json.byokSavings,
+            tiers: json.tiers,
+            workflowTypes: json.workflowTypes
+          });
+        }
+      } catch {}
+    }
+    // eslint-disable-next-line
+  }, []);
   const [selectedWorkflowIndex, setSelectedWorkflowIndex] = useState(0);
-  const [selectedTier, setSelectedTier] = useState<'starter' | 'business' | 'enterprise'>('starter');
+const [selectedTier, setSelectedTier] = useState<'starter' | 'business' | 'professional' | 'enterprise'>('starter');
 
   // Credit pricing (use transferred variables if present)
   const CREDIT_RATE = transferredVariables.creditRate ?? DEFAULT_CREDIT_RATE;
@@ -62,17 +123,93 @@ const PricingCalculator = () => {
   };
 
   // If scenarios view is selected, render the Scenarios component
-  if (currentView === "scenarios") {
+  // In PricingCalculator.tsx, replace the scenarios view logic with this:
+  if ((currentView as ViewType) === "scenarios") {
+    const params = new URLSearchParams(window.location.search);
+    const isAdmin = params.get("mode") === "admin";
+    
+    // In admin mode, don't pass initialVariables when navigating back
+    // Let Scenarios component use localStorage as the source of truth
+    if (isAdmin) {
+      return (
+        <Scenarios
+          onBack={() => setCurrentView("calculator")}
+          onTransferVariables={handleTransferVariables}
+          // Don't pass initialVariables in admin mode - let localStorage handle it
+        />
+      );
+    }
+    
+    // For non-admin mode, preserve the original logic
+    const hasInitialVars =
+      transferredVariables &&
+      (transferredVariables.creditRate !== undefined ||
+        transferredVariables.creditPackSize !== undefined ||
+        transferredVariables.byokSavings !== undefined ||
+        transferredVariables.tiers !== undefined ||
+        transferredVariables.workflowTypes !== undefined);
+        
     return (
       <Scenarios
         onBack={() => setCurrentView("calculator")}
         onTransferVariables={handleTransferVariables}
-        initialVariables={transferredVariables}
+        {...(hasInitialVars ? { initialVariables: transferredVariables } : {})}
       />
     );
   }
-  if (currentView === "feature-comparison") {
+  if ((currentView as ViewType) === "feature-comparison") {
     return <FeatureComparison tiers={tiers} onBack={() => setCurrentView("calculator")} />;
+  }
+  // If loaded via ROI GUID, show only the ROI Calculator page and hide back button
+  if (loadedRoiReport) {
+    return (
+      <ROICalculator
+        onNavigate={() => {}} // no-op
+        currentView="roi-calculator"
+        annualDoozerCost={loadedRoiReport.roiResults?.doozerCost}
+        scenarioVariables={loadedRoiReport.scenarioVariables}
+        hideBackButton={true}
+        loadedRoiInputs={loadedRoiReport.roiInputs}
+        loadedRoiResults={loadedRoiReport.roiResults}
+      />
+    );
+  }
+  if (loadingRoi) {
+    return (
+      <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen flex items-center justify-center">
+        <div className="text-lg text-gray-600">Loading ROI report...</div>
+      </div>
+    );
+  }
+
+  if ((currentView as ViewType) === "roi-calculator") {
+    // Map workflow name to workflowConfig key for ROI Calculator
+    const workflowNameToKey: Record<string, "email" | "data" | "content" | "document" | "complex"> = {
+      "Simple Email Classifier": "email",
+      "Basic Data Processing": "data",
+      "Content Summarization": "content",
+      "Document Review": "document",
+      "Complex Multi-Step Agent": "complex"
+    };
+    const selectedWorkflow = workflowTypes[selectedWorkflowIndex];
+    // Try to match by name, fallback to "email"
+    let workflowTypeKey: "email" | "data" | "content" | "document" | "complex" = "email";
+    if (selectedWorkflow && selectedWorkflow.name) {
+      for (const [label, key] of Object.entries(workflowNameToKey)) {
+        if (selectedWorkflow.name.startsWith(label)) {
+          workflowTypeKey = key as typeof workflowTypeKey;
+          break;
+        }
+      }
+    }
+    return (
+      <ROICalculator
+        onNavigate={setCurrentView}
+        currentView={currentView}
+        annualDoozerCost={costBreakdown.totalCost * 12}
+        scenarioVariables={transferredVariables}
+      />
+    );
   }
 
   return (
@@ -111,6 +248,18 @@ const PricingCalculator = () => {
           >
             <Settings className="w-4 h-4" />
             Scenarios
+          </button>
+          <button
+            onClick={() => setCurrentView("roi-calculator")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+              currentView === "roi-calculator"
+                ? "bg-blue-500 text-white"
+                : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
+            }`}
+            type="button"
+          >
+            <Zap className="w-4 h-4" />
+            ROI Calculator
           </button>
           <button
             onClick={() => setCurrentView("feature-comparison")}
@@ -201,26 +350,30 @@ const PricingCalculator = () => {
             <div className="mt-6">
               <h3 className="text-lg font-medium mb-3 text-gray-800">Select Plan</h3>
               <div className="space-y-2">
-                {Object.entries(tiers).map(([key, tier]: [string, Tier]) => (
-                  <button
-                    key={key}
-                    onClick={() => setSelectedTier(key as 'starter' | 'business' | 'enterprise')}
-                    className={`w-full p-3 rounded-lg border-2 transition-all ${
-                      selectedTier === key
-                        ? `${tier.color} text-white border-transparent`
-                        : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      {tier.icon}
-                      <div className="text-left flex-1">
-                        <div className="font-medium">{tier.name}</div>
-                        <div className="text-xs opacity-90">{formatNumber(tier.credits)} credits</div>
+                {['starter', 'professional', 'business', 'enterprise'].map((key) => {
+                  const tier = tiers[key];
+                  if (!tier) return null;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setSelectedTier(key as 'starter' | 'business' | 'professional' | 'enterprise')}
+                      className={`w-full p-3 rounded-lg border-2 transition-all ${
+                        selectedTier === key
+                          ? `${tier.color} text-white border-transparent`
+                          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        {tier.icon}
+                        <div className="text-left flex-1">
+                          <div className="font-medium">{tier.name}</div>
+                          <div className="text-xs opacity-90">{formatNumber(tier.credits)} credits</div>
+                        </div>
+                        <span className="font-bold">${tier.basePrice}/mo</span>
                       </div>
-                      <span className="font-bold">${tier.basePrice}/mo</span>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -386,7 +539,7 @@ const PricingCalculator = () => {
             {/* Tier Comparison */}
             <div className="mb-6">
               <h3 className="text-lg font-medium mb-3 text-gray-800">Cost per Execution Across Tiers</h3>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 {Object.entries(tiers).map(([tierKey, tier]: [string, Tier]) => {
                   const workflow = workflowTypes[selectedWorkflowIndex] ?? workflowTypes[0];
                   const variableCreditsPerExecution = workflow.credits;
@@ -447,7 +600,7 @@ const PricingCalculator = () => {
             <h3 className="font-medium text-gray-800 mb-2">Summary</h3>
             <ul className="list-disc list-inside ml-4">
               <li>
-                Each plan includes a monthly credit allowance (Starter: {formatNumber(tiers.starter.credits)}, Business: {formatNumber(tiers.business.credits)}, Enterprise: {formatNumber(tiers.enterprise.credits)}).
+                Each plan includes a monthly credit allowance (Starter: {formatNumber(tiers.starter.credits)}, Business: {formatNumber(tiers.business.credits)}, Professional: {formatNumber(tiers.professional.credits)}, Enterprise: {formatNumber(tiers.enterprise.credits)}).
               </li>
               <li>
                 You only pay extra if you use more credits than your plan includes.

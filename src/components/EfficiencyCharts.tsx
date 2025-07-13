@@ -96,7 +96,8 @@ const EfficiencyCharts: React.FC<EfficiencyChartsProps> = ({
   
   const tierColors = {
     'Starter': '#3b82f6',
-    'Business': '#8b5cf6', 
+    'Business': '#8b5cf6',
+    'Professional': '#14b8a6',
     'Enterprise': '#f59e0b'
   };
 
@@ -140,26 +141,30 @@ const EfficiencyCharts: React.FC<EfficiencyChartsProps> = ({
               />
               <Legend />
               
-              {Object.entries(tiers).map(([tierKey, tier]) => (
-                <React.Fragment key={tierKey}>
-                  <Line
-                    type="monotone"
-                    dataKey={tier.name}
-                    stroke={tierColors[tier.name as keyof typeof tierColors]}
-                    strokeWidth={2}
-                    dot={false}
-                    strokeDasharray="0"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey={`${tier.name} (BYOK)`}
-                    stroke={tierColors[tier.name as keyof typeof tierColors]}
-                    strokeWidth={2}
-                    dot={false}
-                    strokeDasharray="5 5"
-                  />
-                </React.Fragment>
-              ))}
+              {['starter', 'professional', 'business', 'enterprise'].map((tierKey) => {
+                const tier = tiers[tierKey];
+                if (!tier) return null;
+                return (
+                  <React.Fragment key={tierKey}>
+                    <Line
+                      type="monotone"
+                      dataKey={tier.name}
+                      stroke={tierColors[tier.name as keyof typeof tierColors]}
+                      strokeWidth={2}
+                      dot={false}
+                      strokeDasharray="0"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey={`${tier.name} (BYOK)`}
+                      stroke={tierColors[tier.name as keyof typeof tierColors]}
+                      strokeWidth={2}
+                      dot={false}
+                      strokeDasharray="5 5"
+                    />
+                  </React.Fragment>
+                );
+              })}
             </LineChart>
           </ResponsiveContainer>
         </div>

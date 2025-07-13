@@ -146,6 +146,7 @@ const BreakEvenChart: React.FC<BreakEvenChartProps> = ({
   const tierColors = {
     'Starter': '#3b82f6',
     'Business': '#8b5cf6', 
+    'Professional': '#14b8a6',
     'Enterprise': '#f59e0b'
   };
 
@@ -189,16 +190,20 @@ const BreakEvenChart: React.FC<BreakEvenChartProps> = ({
               />
               <Legend />
               
-              {Object.entries(tiers).map(([tierKey, tier]) => (
-                <Line
-                  key={tierKey}
-                  type="monotone"
-                  dataKey={tier.name}
-                  stroke={tierColors[tier.name as keyof typeof tierColors]}
-                  strokeWidth={3}
-                  dot={false}
-                />
-              ))}
+              {['starter', 'professional', 'business', 'enterprise'].map((tierKey) => {
+                const tier = tiers[tierKey];
+                if (!tier) return null;
+                return (
+                  <Line
+                    key={tierKey}
+                    type="monotone"
+                    dataKey={tier.name}
+                    stroke={tierColors[tier.name as keyof typeof tierColors]}
+                    strokeWidth={3}
+                    dot={false}
+                  />
+                );
+              })}
               
               {/* Add reference lines for break-even points */}
               {breakEvenPoints.slice(0, 3).map((point, index) => (
@@ -270,16 +275,20 @@ const BreakEvenChart: React.FC<BreakEvenChartProps> = ({
                 formatter={(value: string) => value.replace('_efficiency', '')}
               />
               
-              {Object.entries(tiers).map(([tierKey, tier]) => (
-                <Line
-                  key={tierKey}
-                  type="monotone"
-                  dataKey={`${tier.name}_efficiency`}
-                  stroke={tierColors[tier.name as keyof typeof tierColors]}
-                  strokeWidth={2}
-                  dot={false}
-                />
-              ))}
+              {['starter', 'professional', 'business', 'enterprise'].map((tierKey) => {
+                const tier = tiers[tierKey];
+                if (!tier) return null;
+                return (
+                  <Line
+                    key={tierKey}
+                    type="monotone"
+                    dataKey={`${tier.name}_efficiency`}
+                    stroke={tierColors[tier.name as keyof typeof tierColors]}
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                );
+              })}
             </LineChart>
           </ResponsiveContainer>
         </div>

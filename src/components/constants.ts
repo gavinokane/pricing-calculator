@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap, Building, Crown } from 'lucide-react';
+import { Zap, Building, Briefcase, Crown } from 'lucide-react';
 import { Tier, WorkflowType } from './types';
 
 export const SCENARIO_STORAGE_KEY = "doozerScenarioState";
@@ -12,6 +12,7 @@ export const DEFAULT_BYOK_SAVINGS = 60;
 export const DEFAULT_TIER_META: Record<string, { color: string; icon: React.ReactNode }> = {
   starter: { color: 'bg-blue-500', icon: React.createElement(Zap, { className: "w-5 h-5" }) },
   business: { color: 'bg-purple-500', icon: React.createElement(Building, { className: "w-5 h-5" }) },
+  professional: { color: 'bg-teal-500', icon: React.createElement(Briefcase, { className: "w-5 h-5" }) },
   enterprise: { color: 'bg-amber-500', icon: React.createElement(Crown, { className: "w-5 h-5" }) }
 };
 
@@ -35,6 +36,27 @@ export const DEFAULT_TIERS: Record<string, Tier> = {
   },
   business: {
     name: 'Business',
+    basePrice: 700,
+    credits: 75000,
+    fixedCreditsPerExecution: 2.5,
+    workspace: 'Private + Advanced',
+    features: [
+      '75,000 credits included',
+      '2.5 credits fixed cost per execution',
+      'Private workspace with advanced controls',
+      'Role-based access control (RBAC)',
+      'Custom agent development',
+      'Advanced workflow automation',
+      'Premium integrations',
+      'Priority support',
+      'Advanced analytics',
+      'Team collaboration',
+      'API access',
+      'Workflow scheduling'
+    ]
+  },
+  professional: {
+    name: 'Professional',
     basePrice: 400,
     credits: 50000,
     fixedCreditsPerExecution: 5,

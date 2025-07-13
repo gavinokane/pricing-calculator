@@ -193,6 +193,7 @@
                         <label for="selectedTier">Tier</label>
                         <select id="selectedTier">
                             <option value="starter">Starter</option>
+                            <option value="professional">Professional</option>
                             <option value="business">Business</option>
                             <option value="enterprise">Enterprise</option>
                         </select>
@@ -246,10 +247,12 @@
     </div>
 
     <script>
+        console.log("Script loaded");
         // Global state
         let tiers = {
             starter: { name: 'Starter', basePrice: 50, credits: 1000, fixedCreditsPerExecution: 4 },
-            business: { name: 'Business', basePrice: 400, credits: 200000, fixedCreditsPerExecution: 3 },
+            professional: { name: 'Professional', basePrice: 400, credits: 50000, fixedCreditsPerExecution: 5 },
+            business: { name: 'Business', basePrice: 700, credits: 75000, fixedCreditsPerExecution: 2.5 },
             enterprise: { name: 'Enterprise', basePrice: 1000, credits: 300000, fixedCreditsPerExecution: 2 }
         };
 
@@ -277,7 +280,14 @@
         // Render tier configuration
         function renderTierConfig() {
             const tbody = document.getElementById('tierConfig');
-            tbody.innerHTML = Object.entries(tiers).map(([key, tier]) => `
+            const tierOrder = ['starter', 'professional', 'business', 'enterprise'];
+            console.log('Tiers object:', tiers);
+            tbody.innerHTML = tierOrder.map((key) => {
+                const tier = tiers[key];
+                if (!tier) {
+                    return `<tr class="tier-${key}"><td colspan="5" style="color:red;">Tier "${key}" missing from tiers object</td></tr>`;
+                }
+                return `
                 <tr class="tier-${key}">
                     <td><strong>${tier.name}</strong></td>
                     <td><input type="number" value="${tier.basePrice}" onchange="updateTier('${key}', 'basePrice', this.value)"></td>
@@ -285,7 +295,8 @@
                     <td><input type="number" step="0.1" value="${tier.fixedCreditsPerExecution}" onchange="updateTier('${key}', 'fixedCreditsPerExecution', this.value)"></td>
                     <td><button onclick="resetTier('${key}')" style="padding: 4px 8px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Reset</button></td>
                 </tr>
-            `).join('');
+                `;
+            }).join('');
         }
 
         // Render workflow types
@@ -302,12 +313,20 @@
 
         // Update workflow selects
         function updateWorkflowSelects() {
-            const selects = [document.getElementById('workflowType'), document.getElementById('comparisonWorkflow')];
+            const selects = [document.getElementById('workflowType'), document.getElementById('comparisonWorkflow'), document.getElementById('selectedTier')];
             selects.forEach(select => {
                 if (select) {
-                    select.innerHTML = workflowTypes.map((workflow, index) => 
-                        `<option value="${index}">${workflow.name} (${workflow.credits} credits)</option>`
-                    ).join('');
+                    if (select.id === 'selectedTier') {
+                        // Explicit tier order for the select
+                        const tierOrder = ['starter', 'professional', 'business', 'enterprise'];
+                        select.innerHTML = tierOrder.map(key =>
+                            `<option value="${key}">${tiers[key].name}</option>`
+                        ).join('');
+                    } else {
+                        select.innerHTML = workflowTypes.map((workflow, index) => 
+                            `<option value="${index}">${workflow.name} (${workflow.credits} credits)</option>`
+                        ).join('');
+                    }
                 }
             });
         }
@@ -324,7 +343,8 @@
         function resetTier(tierKey) {
             const defaults = {
                 starter: { name: 'Starter', basePrice: 50, credits: 1000, fixedCreditsPerExecution: 4 },
-                business: { name: 'Business', basePrice: 400, credits: 200000, fixedCreditsPerExecution: 3 },
+                professional: { name: 'Professional', basePrice: 400, credits: 50000, fixedCreditsPerExecution: 5 },
+                business: { name: 'Business', basePrice: 700, credits: 75000, fixedCreditsPerExecution: 2.5 },
                 enterprise: { name: 'Enterprise', basePrice: 1000, credits: 300000, fixedCreditsPerExecution: 2 }
             };
             tiers[tierKey] = { ...defaults[tierKey] };
@@ -468,7 +488,9 @@
                 <tbody>
             `;
             
-            Object.entries(tiers).forEach(([tierKey, tier]) => {
+            const tierOrder = ['starter', 'professional', 'business', 'enterprise'];
+            tierOrder.forEach((tierKey) => {
+                const tier = tiers[tierKey];
                 const regular = calculateScenario(executions, workflowIndex, tierKey, false);
                 const byok = calculateScenario(executions, workflowIndex, tierKey, true);
                 
