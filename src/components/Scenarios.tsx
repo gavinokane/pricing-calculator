@@ -309,7 +309,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
         _byokSavings
       )
     })));
-  }, [_creditRate, _creditPackSize, _byokSavings, _tiers, _workflowTypes]);
+  }, [_creditRate, _creditPackSize, _byokSavings, _tiers, _workflowTypes, _scenarios]);
 
   // Persist all relevant state to localStorage on change
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -334,7 +334,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
     } catch (e) {
       console.error("[Scenarios] Error persisting to localStorage:", e);
     }
-  }, [_creditRate, _creditPackSize, _byokSavings, _tiers, _workflowTypes, scenarios, hasLoaded]);
+  }, [_creditRate, _creditPackSize, _byokSavings, _tiers, _workflowTypes, _scenarios, hasLoaded]);
 
 
   return (
