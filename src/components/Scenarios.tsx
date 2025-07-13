@@ -334,7 +334,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
     } catch (e) {
       console.error("[Scenarios] Error persisting to localStorage:", e);
     }
-  }, [_creditRate, _creditPackSize, _byokSavings, _tiers, _workflowTypes, _scenarios, hasLoaded]);
+  }, [_creditRate, _creditPackSize, _byokSavings, _tiers, _workflowTypes, scenarios, hasLoaded]);
 
 
   return (
