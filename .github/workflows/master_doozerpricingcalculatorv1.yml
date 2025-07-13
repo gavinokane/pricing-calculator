@@ -30,13 +30,10 @@ jobs:
     - name: Build (type check and bundle)
       run: npm run build
 
-    - name: Add .skipOryxBuild to dist
-      run: echo "" > dist/.skipOryxBuild
-
     - name: 'Deploy to Azure Web App'
       uses: azure/webapps-deploy@v2
       with: 
         app-name: 'doozerpricingcalculatorv1'
         slot-name: 'production'
         publish-profile: ${{ secrets.AzureAppService_PublishProfile_0a3d86e1d430486599236bb599c155fe }}
-        package: dist
+        package: .
