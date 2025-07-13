@@ -19,17 +19,26 @@ import { useEffect } from 'react';
 
 const PricingCalculator = () => {
   const [currentView, setCurrentView] = useState<ViewType>("calculator");
-  const [transferredVariables, setTransferredVariables] = useState<TransferredVariables>({});
-  const [usage, setUsage] = useState({
+  const [transferredVariables, setTransferredVariables] = useState<Partial<TransferredVariables>>({});
+  const [usage, setUsage] = useState<{ executions: number; hasApiKeys: boolean }>({
     executions: 500,
     hasApiKeys: false
   });
 
   // ROI report loading state
+  interface RoiInputs {
+    hoursPerWeek?: number;
+    numPeople?: number;
+    hourlyRate?: number;
+    automationLevel?: number;
+    errorRate?: number;
+    errorCost?: number;
+    implementationCost?: number;
+  }
   interface LoadedRoiReport {
-    roiResults?: any;
-    scenarioVariables?: any;
-    roiInputs?: any;
+    roiResults?: { doozerCost?: number };
+    scenarioVariables?: TransferredVariables;
+    roiInputs?: RoiInputs;
   }
   const [loadedRoiReport, setLoadedRoiReport] = useState<LoadedRoiReport | null>(null);
   const [loadingRoi, setLoadingRoi] = useState(false);
@@ -68,7 +77,7 @@ const PricingCalculator = () => {
               });
             }
           }
-        } catch {}
+        } catch { /* ignore */ }
       })();
     } else if (base64) {
       try {
@@ -83,9 +92,8 @@ const PricingCalculator = () => {
             workflowTypes: json.workflowTypes
           });
         }
-      } catch {}
+      } catch { /* ignore */ }
     }
-    // eslint-disable-next-line
   }, []);
   const [selectedWorkflowIndex, setSelectedWorkflowIndex] = useState(0);
 const [selectedTier, setSelectedTier] = useState<'starter' | 'business' | 'professional' | 'enterprise'>('starter');
@@ -175,7 +183,6 @@ const [selectedTier, setSelectedTier] = useState<'starter' | 'business' | 'profe
         scenarioVariables={loadedRoiReport.scenarioVariables}
         hideBackButton={true}
         loadedRoiInputs={loadedRoiReport.roiInputs}
-        loadedRoiResults={loadedRoiReport.roiResults}
       />
     );
   }

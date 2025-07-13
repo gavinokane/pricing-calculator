@@ -31,7 +31,6 @@ interface ROICalculatorProps {
   scenarioVariables?: TransferredVariables;
   hideBackButton?: boolean;
   loadedRoiInputs?: RoiInputs;
-  loadedRoiResults?: unknown;
 }
 
 const ROICalculator: React.FC<ROICalculatorProps> = ({
@@ -40,8 +39,7 @@ const ROICalculator: React.FC<ROICalculatorProps> = ({
   annualDoozerCost,
   scenarioVariables,
   hideBackButton = false,
-  loadedRoiInputs,
-  loadedRoiResults
+  loadedRoiInputs
 }) => {
   // Save/Send modal state
   const [showSaveModal, setShowSaveModal] = useState(false);

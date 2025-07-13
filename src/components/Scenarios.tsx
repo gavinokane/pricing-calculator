@@ -17,14 +17,7 @@ interface ScenariosProps {
 
 // --- Base64 URL param loader ---
 const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, initialVariables }) => {
-  const getBase64Param = (param: string) => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      return params.get(param);
-    } catch {
-      return null;
-    }
-  };
+  // (Removed unused getBase64Param function)
 
   // Get mode param and key param from URL
   const getModeParam = () => {
@@ -165,7 +158,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
             }
             return;
           }
-        } catch {}
+        } catch { /* ignore */ }
       })();
       return;
     }
@@ -183,7 +176,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
           if (Array.isArray(json.scenarios)) setScenarios(json.scenarios);
         }
         return;
-      } catch {}
+      } catch { /* ignore */ }
     }
 
     // Fallback logic for non-admin mode
@@ -391,7 +384,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
                 };
                 try {
                   localStorage.setItem(SCENARIO_STORAGE_KEY, JSON.stringify(toPersist));
-                } catch {}
+                } catch { /* ignore */ }
                 onTransferVariables({
                   creditRate: _creditRate,
                   creditPackSize: _creditPackSize,
@@ -702,7 +695,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
               </tr>
             </thead>
             <tbody>
-              {_scenarios.map((scenario, index) => (
+              {_scenarios.map((scenario: Scenario, index: number) => (
                 <tr key={scenario.id}>
                   <td className="p-3 border-b">{index + 1}</td>
                   <td className="p-3 border-b">{formatNumber(scenario.executions)}</td>
