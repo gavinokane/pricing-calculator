@@ -1,4 +1,5 @@
 ﻿# Pricing Calculator
+Deployed: 2025-07-13T22:10:00+10:00
 
 A React TypeScript application for calculating pricing based on credit usage and execution costs.
 
