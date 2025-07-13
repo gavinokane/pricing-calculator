@@ -194,7 +194,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
     setWorkflowTypes(persisted?.workflowTypes ?? initialVariables?.workflowTypes ?? DEFAULT_WORKFLOW_TYPES);
     setScenarios(persisted?.scenarios ?? []);
 
-  }, []); // Keep empty dependency array - this should only run once on mount
+  }, [initialVariables?.byokSavings, initialVariables?.creditPackSize, initialVariables?.creditRate, initialVariables?.tiers, initialVariables?.workflowTypes]); // Added missing dependencies per eslint
 
   // Use non-null assertion or fallback for state variables
   const _creditRate = creditRate ?? 0.01;
@@ -202,7 +202,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
   const _byokSavings = byokSavings ?? 60;
   const _tiers = tiers ?? DEFAULT_TIERS;
   const _workflowTypes = workflowTypes ?? DEFAULT_WORKFLOW_TYPES;
-  const _scenarios = scenarios ?? [];
+  const _scenarios = React.useMemo(() => scenarios ?? [], [scenarios]);
 // --- END Base64 URL param loader ---
 
 
