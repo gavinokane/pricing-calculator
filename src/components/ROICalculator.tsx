@@ -75,7 +75,6 @@ const ROICalculator: React.FC<ROICalculatorProps> = ({
       setErrorCost(loadedRoiInputs.errorCost ?? 70);
       setImplementationCost(loadedRoiInputs.implementationCost ?? 5000);
     }
-    // eslint-disable-next-line
   }, [loadedRoiInputs]);
 
   // Outputs

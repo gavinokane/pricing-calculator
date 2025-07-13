@@ -116,7 +116,7 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
         // For tiers, use persisted data directly without merging with defaults
         if (persisted.tiers) {
           console.log("[Scenarios] ADMIN MODE: Setting tiers from persisted:", persisted.tiers);
-          setTiers(t => {
+          setTiers(tiers => {
             const newTiers = persisted.tiers;
             console.log("[Scenarios] ADMIN MODE: tiers state after setTiers:", newTiers);
             return newTiers;
@@ -309,7 +309,6 @@ const Scenarios: React.FC<ScenariosProps> = ({ onBack, onTransferVariables, init
         _byokSavings
       )
     })));
-    // eslint-disable-next-line
   }, [_creditRate, _creditPackSize, _byokSavings, _tiers, _workflowTypes]);
 
   // Persist all relevant state to localStorage on change
@@ -978,8 +977,8 @@ const SaveToCloudButton: React.FC<{
       if (!res.ok) throw new Error("Failed to save to backend");
       const data = await res.json();
       setDocId(data.id);
-    } catch (e: any) {
-      setError(e?.message || "Failed to save to backend");
+    } catch (e: unknown) {
+      setError((e as Error)?.message || "Failed to save to backend");
     } finally {
       setSaving(false);
       setShow(true);
