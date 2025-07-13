@@ -26,21 +26,27 @@ const AccessControlWrapper: React.FC = () => {
 
   // 1. Allow if valid id param
   if (id && isValidId(id)) {
+    console.log("[AccessControl] Access granted: valid id param", { id });
     // (readonly logic handled in PricingCalculator/ROICalculator)
     return <PricingCalculator />;
   }
 
   // 2. Allow if mode=admin and valid key
   if (mode === "admin" && key && isValidKey(key)) {
+    console.log("[AccessControl] Access granted: admin mode", { mode, key, isValid: isValidKey(key) });
     return <PricingCalculator />;
+  } else if (mode === "admin") {
+    console.log("[AccessControl] Admin mode attempted but invalid key", { mode, key, isValid: isValidKey(key) });
   }
 
   // 3. Allow if roi=valid id (readonly restriction handled elsewhere)
   if (roi && isValidId(roi)) {
+    console.log("[AccessControl] Access granted: valid roi param", { roi });
     return <PricingCalculator />;
   }
 
   // Otherwise, deny access
+  console.log("[AccessControl] Access denied", { id, roi, mode, key });
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white border border-red-300 rounded-lg p-8 shadow-lg text-center">
