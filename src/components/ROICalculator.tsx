@@ -495,8 +495,8 @@ const ROICalculator: React.FC<ROICalculatorProps> = ({
           <div className="text-lg font-semibold mb-4 text-gray-800">Current Process</div>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              <Tooltip content="How many hours per week your team spends on this process.">
-                Hours per week spent on this process
+              <Tooltip content="On average, how many hours per week, each person spends on this process.">
+                Average hours per week, each person spends on this process
               </Tooltip>
             </label>
             <input

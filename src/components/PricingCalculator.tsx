@@ -96,7 +96,10 @@ const PricingCalculator = () => {
     }
   }, []);
   const [selectedWorkflowIndex, setSelectedWorkflowIndex] = useState(0);
-const [selectedTier, setSelectedTier] = useState<'starter' | 'business' | 'professional' | 'enterprise'>('starter');
+  const [selectedTier, setSelectedTier] = useState<'starter' | 'business' | 'professional' | 'enterprise'>('starter');
+  const [workflowMode, setWorkflowMode] = useState<'prebuilt' | 'custom'>('prebuilt');
+  const [customCredits, setCustomCredits] = useState<number | null>(null);
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   // Credit pricing (use transferred variables if present)
   const CREDIT_RATE = transferredVariables.creditRate ?? DEFAULT_CREDIT_RATE;
@@ -119,12 +122,24 @@ const [selectedTier, setSelectedTier] = useState<'starter' | 'business' | 'profe
   // Workflow types with variable credit costs (use transferred if present)
   const workflowTypes: WorkflowType[] = transferredVariables.workflowTypes ?? DEFAULT_WORKFLOW_TYPES;
 
+  // Determine variable credits per execution
+  const variableCredits = workflowMode === 'prebuilt'
+    ? workflowTypes[selectedWorkflowIndex]?.credits ?? 0
+    : customCredits ?? 0;
+
+  // Patch workflowTypes for calculation if in custom mode
+  const patchedWorkflowTypes = workflowMode === 'custom'
+    ? [{ name: 'Custom Workflow', credits: variableCredits }]
+    : workflowTypes;
+
+  const patchedWorkflowIndex = workflowMode === 'custom' ? 0 : selectedWorkflowIndex;
+
   const costBreakdown = calculateCreditUsage(
     usage,
-    selectedWorkflowIndex,
+    patchedWorkflowIndex,
     selectedTier,
     tiers,
-    workflowTypes,
+    patchedWorkflowTypes,
     CREDIT_RATE,
     CREDIT_PACK_SIZE,
     BYOK_SAVINGS
@@ -313,50 +328,101 @@ const [selectedTier, setSelectedTier] = useState<'starter' | 'business' | 'profe
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Agent Workflow Type
+                  Agent Workflow Mode
                 </label>
-                <select
-                  value={selectedWorkflowIndex}
-                  onChange={(e) => setSelectedWorkflowIndex(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {workflowTypes.map((workflow: WorkflowType, index: number) => (
-                    <option key={index} value={index}>
-                      {workflow.name} ({workflow.credits} credits)
-                    </option>
-                  ))}
-                </select>
-                <div className="mt-1 text-xs text-gray-500">
-                  Variable credits for LLM calls and compute steps
+                <div className="flex gap-4 mb-2">
+                  <label className="flex items-center gap-2">
+<input
+  type="radio"
+  name="workflowMode"
+  value="prebuilt"
+  checked={workflowMode === 'prebuilt'}
+  onChange={() => {
+    setWorkflowMode('prebuilt');
+    setUsage(prev => ({ ...prev, hasApiKeys: false }));
+  }}
+/>
+Pre-built
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="workflowMode"
+                      value="custom"
+                      checked={workflowMode === 'custom'}
+                      onChange={() => setWorkflowMode('custom')}
+                    />
+                    Custom built
+                  </label>
                 </div>
+                {workflowMode === 'prebuilt' ? (
+                  <>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Agent Workflow Type
+                    </label>
+                    <select
+                      value={selectedWorkflowIndex}
+                      onChange={(e) => setSelectedWorkflowIndex(Number(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {workflowTypes.map((workflow: WorkflowType, index: number) => (
+                        <option key={index} value={index}>
+                          {workflow.name} ({workflow.credits} credits)
+                        </option>
+                      ))}
+                    </select>
+                    <div className="mt-1 text-xs text-gray-500">
+                      Variable credits for LLM calls and compute steps
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="w-full px-3 py-2 bg-blue-500 text-white rounded-md mt-2"
+                      onClick={() => setWizardOpen(true)}
+                    >
+                      Configure Custom Workflow
+                    </button>
+                    {customCredits !== null && (
+                      <div className="mt-2 text-xs text-green-700">
+                        Custom workflow credits: <b>{customCredits}</b>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="byok"
-                  checked={usage.hasApiKeys}
-                  onChange={(e) => setUsage(prev => ({
-                    ...prev,
-                    hasApiKeys: e.target.checked
-                  }))}
-                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                />
-                <label htmlFor="byok" className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                  <Key className="w-4 h-4" />
-                  I'll bring my own API keys (BYOK)
-                </label>
-              </div>
-              {usage.hasApiKeys && (
-                <div className="bg-green-50 border border-green-200 rounded-md p-3 text-sm text-green-800">
-                  <div className="flex items-start gap-2">
-                    <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                    <div>
-                      BYOK saves ~{BYOK_SAVINGS}% on variable costs by eliminating our markup on third-party provider fees.
-                    </div>
-                  </div>
-                </div>
-              )}
+{workflowMode === 'custom' && (
+  <>
+    <div className="flex items-center gap-2">
+      <input
+        type="checkbox"
+        id="byok"
+        checked={usage.hasApiKeys}
+        onChange={(e) => setUsage(prev => ({
+          ...prev,
+          hasApiKeys: e.target.checked
+        }))}
+        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+      />
+      <label htmlFor="byok" className="text-sm font-medium text-gray-700 flex items-center gap-1">
+        <Key className="w-4 h-4" />
+        I'll bring my own API keys (BYOK)
+      </label>
+    </div>
+    {usage.hasApiKeys && (
+      <div className="bg-green-50 border border-green-200 rounded-md p-3 text-sm text-green-800">
+        <div className="flex items-start gap-2">
+          <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+          <div>
+            BYOK saves ~{BYOK_SAVINGS}% on variable costs by eliminating our markup on third-party provider fees.
+          </div>
+        </div>
+      </div>
+    )}
+  </>
+)}
             </div>
 
             <div className="mt-6">
@@ -622,6 +688,89 @@ const [selectedTier, setSelectedTier] = useState<'starter' | 'business' | 'profe
               </li>
             </ul>
           </div>
+        </div>
+      </div>
+      {/* Wizard Dialog for Custom Workflow */}
+      {wizardOpen && (
+        <CustomWorkflowWizard
+          onClose={() => setWizardOpen(false)}
+          onFinish={(credits) => {
+            setCustomCredits(credits);
+            setWizardOpen(false);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+// Wizard dialog component for custom workflow
+const CustomWorkflowWizard = ({
+  onClose,
+  onFinish,
+}: {
+  onClose: () => void;
+  onFinish: (credits: number) => void;
+}) => {
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState<{ [key: string]: string }>({});
+
+  const questions = [
+    { key: 'q1', label: 'What is the main purpose of your workflow?' },
+    { key: 'q2', label: 'How many steps does your workflow have?' },
+    { key: 'q3', label: 'Does your workflow require external API calls?' },
+  ];
+
+  const handleNext = () => {
+    if (step < questions.length - 1) {
+      setStep(step + 1);
+    } else {
+      // On finish, return a random number between 10 and 20
+      const randomCredits = Math.floor(Math.random() * 11) + 10;
+      onFinish(randomCredits);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+      <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full relative">
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl font-bold"
+          aria-label="Close"
+        >
+          ×
+        </button>
+        <h2 className="text-lg font-semibold mb-4">Custom Workflow Wizard</h2>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {questions[step].label}
+          </label>
+          <input
+            type="text"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={answers[questions[step].key] || ''}
+            onChange={(e) =>
+              setAnswers((prev) => ({
+                ...prev,
+                [questions[step].key]: e.target.value,
+              }))
+            }
+          />
+        </div>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleNext}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            {step < questions.length - 1 ? 'Next' : 'Finish'}
+          </button>
         </div>
       </div>
     </div>
