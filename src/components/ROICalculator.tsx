@@ -2,15 +2,16 @@
 import "jspdf-autotable";
 import React, { useState, useEffect } from "react";
 import { Zap, ArrowLeft } from "lucide-react";
+import { computeRoi, roiBand } from "./roiMath";
 
 /* workflowConfig removed as it was unused */
 
 /* workflowOptions removed as it was unused */
 
-const benefitsMultiplier = 1.3; // 30% benefits/overhead
-
-const formatCurrency = (n: number) =>
-  "$" + n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+const formatCurrency = (n: number) => {
+  const sign = n < 0 ? "-" : "";
+  return sign + "$" + Math.abs(n).toLocaleString(undefined, { maximumFractionDigits: 0 });
+};
 
 import { ViewType, TransferredVariables } from "./types";
 
@@ -64,6 +65,17 @@ const ROICalculator: React.FC<ROICalculatorProps> = ({
   const [errorCost, setErrorCost] = useState(70);
   const [implementationCost, setImplementationCost] = useState(5000);
 
+  // Manual override for the annual Doozer subscription. Defaults to the value
+  // passed in from the Pricing Calculator, but the user can edit it here.
+  const [subscriptionOverride, setSubscriptionOverride] = useState<number | null>(null);
+  const effectiveAnnualDoozerCost =
+    subscriptionOverride !== null ? subscriptionOverride : (annualDoozerCost ?? 0);
+
+  // Reset the override when a new value flows in from the parent quote.
+  useEffect(() => {
+    setSubscriptionOverride(null);
+  }, [annualDoozerCost]);
+
   // If loadedRoiInputs is present, initialize state from it (only on mount)
   useEffect(() => {
     if (loadedRoiInputs) {
@@ -92,44 +104,35 @@ const ROICalculator: React.FC<ROICalculatorProps> = ({
   const [netSavings, setNetSavings] = useState(0);
   const [totalInvestment, setTotalInvestment] = useState(0);
 
-  // Calculation logic
+  // Calculation logic — single source of truth in roiMath.ts
+  const roi = computeRoi({
+    hoursPerWeek,
+    numPeople,
+    hourlyRate,
+    automationLevel,
+    errorRate,
+    errorCost,
+    implementationCost,
+    annualDoozerCost: effectiveAnnualDoozerCost,
+  });
+
   useEffect(() => {
-    // Current costs
-    const totalHourlyRate = hourlyRate * benefitsMultiplier;
-    const annualLaborCost = hoursPerWeek * numPeople * totalHourlyRate * 52;
-    const annualErrorCost =
-      (annualLaborCost * (errorRate / 100)) * (errorCost / hourlyRate);
-    const totalCurrent = annualLaborCost + annualErrorCost;
-
-    // Post-automation
-    const automationPercent = automationLevel / 100;
-    const remainingLaborCost = annualLaborCost * (1 - automationPercent);
-
-    // Doozer cost calculation: always use the value passed from Pricing Calculator
-    const usedAnnualDoozerCost = annualDoozerCost ?? 0;
-
-    // ROI calculations
-    const totalNewCost = remainingLaborCost + usedAnnualDoozerCost;
-    const netAnnualSavings = totalCurrent - totalNewCost;
-    const totalFirstYearInvestment = remainingLaborCost + usedAnnualDoozerCost + implementationCost;
-    // const roi = netAnnualSavings > 0 ? (netAnnualSavings / totalFirstYearInvestment) * 100 : 0; // unused
-    const paybackMonths =
-      totalFirstYearInvestment > 0 ? totalFirstYearInvestment / (netAnnualSavings / 12) : 0;
-    const hoursFreedPerWeek = hoursPerWeek * automationPercent;
-    // const roiMult = totalFirstYearInvestment > 0 ? netAnnualSavings / totalFirstYearInvestment : 0; // unused
-
-    // Set outputs
-    setAnnualSavings(Math.round(netAnnualSavings));
-    setPaybackPeriod(paybackMonths > 0 ? paybackMonths : 0);
-    setHoursFreed(Math.round(hoursFreedPerWeek));
-    setDoozerCost(Math.round(usedAnnualDoozerCost));
-    setCurrentCost(Math.round(annualLaborCost));
-    setErrorCosts(Math.round(annualErrorCost));
-    setTotalCurrentCost(Math.round(totalCurrent));
-    setRemainingCost(Math.round(remainingLaborCost));
-    setDoozerSubscription(Math.round(usedAnnualDoozerCost));
-    setNetSavings(Math.round(netAnnualSavings));
-    setTotalInvestment(Math.round(totalFirstYearInvestment));
+    setAnnualSavings(Math.round(roi.netAnnualSavings));
+    setPaybackPeriod(roi.paybackMonths !== null ? roi.paybackMonths : 0);
+    setHoursFreed(Math.round(roi.hoursFreedPerWeek));
+    setDoozerCost(Math.round(effectiveAnnualDoozerCost));
+    setCurrentCost(Math.round(roi.annualLaborCost));
+    setErrorCosts(Math.round(roi.annualErrorCost));
+    setTotalCurrentCost(Math.round(roi.totalCurrentCost));
+    setRemainingCost(Math.round(roi.remainingLaborCost));
+    setDoozerSubscription(Math.round(effectiveAnnualDoozerCost));
+    setNetSavings(Math.round(roi.netAnnualSavings));
+    // Kept for backwards compatibility with saved reports — Year 1 outlay
+    // (impl + sub + residual labour). The corrected ROI does not use this
+    // figure as a denominator; it is purely informational.
+    setTotalInvestment(
+      Math.round(roi.remainingLaborCost + effectiveAnnualDoozerCost + implementationCost),
+    );
   }, [
     hoursPerWeek,
     numPeople,
@@ -138,22 +141,24 @@ const ROICalculator: React.FC<ROICalculatorProps> = ({
     errorRate,
     errorCost,
     implementationCost,
-    annualDoozerCost
+    effectiveAnnualDoozerCost,
+    roi.netAnnualSavings,
+    roi.paybackMonths,
+    roi.hoursFreedPerWeek,
+    roi.annualLaborCost,
+    roi.annualErrorCost,
+    roi.totalCurrentCost,
+    roi.remainingLaborCost,
   ]);
 
-  // ROI context removed (was unused and caused errors)
-
-  // 3-year cumulative ROI calculation
+  // Year-N ROI as integer percentages (null when implementationCost === 0).
+  const year1ROI = roi.year1ROI === null ? null : Math.round(roi.year1ROI);
+  const year2ROI = roi.year2ROI === null ? null : Math.round(roi.year2ROI);
+  const year3ROI = roi.year3ROI === null ? null : Math.round(roi.year3ROI);
+  const threeYearCumulativeROI = year3ROI;
+  // Year 2 / Year 3 informational outlays (still shown in the cost breakdown card)
   const year2Investment = remainingCost + doozerCost;
   const year3Investment = year2Investment;
-  const threeYearCumulativeROI =
-    totalInvestment + year2Investment + year3Investment > 0
-      ? Math.round(
-          ((netSavings * 3) /
-            (totalInvestment + year2Investment + year3Investment)) *
-            100
-        )
-      : 0;
 
   // Simple custom Tooltip component
   interface TooltipProps {
@@ -661,8 +666,49 @@ const ROICalculator: React.FC<ROICalculatorProps> = ({
               disabled={hideBackButton}
             />
           </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              <Tooltip content={
+                <>
+                  <div className="font-bold mb-1">Annual Doozer subscription ($)</div>
+                  <div>
+                    Defaults to the figure flowing in from the Pricing Calculator. Edit if you want to model a different subscription level for this ROI scenario.
+                  </div>
+                </>
+              }>
+                Annual Doozer subscription ($)
+              </Tooltip>
+            </label>
+            <div className="flex gap-2 items-center">
+              <input
+                type="number"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                min={0}
+                step={100}
+                value={effectiveAnnualDoozerCost}
+                onChange={e => setSubscriptionOverride(Number(e.target.value))}
+                readOnly={hideBackButton}
+                disabled={hideBackButton}
+              />
+              {!hideBackButton && subscriptionOverride !== null && (
+                <button
+                  type="button"
+                  className="px-3 py-2 text-sm bg-gray-100 border border-gray-300 rounded hover:bg-gray-200"
+                  onClick={() => setSubscriptionOverride(null)}
+                  title="Reset to the value from the Pricing Calculator"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+            {subscriptionOverride !== null && (annualDoozerCost ?? 0) !== subscriptionOverride && (
+              <div className="text-xs text-gray-500 mt-1">
+                Overriding quote value of {formatCurrency(annualDoozerCost ?? 0)}.
+              </div>
+            )}
+          </div>
         </div>
-        
+
         {/* Results Panel */}
         <div className="bg-white rounded-lg shadow-lg p-6">
           {/* ROI Headline Card - spans both columns */}
@@ -674,44 +720,35 @@ const ROICalculator: React.FC<ROICalculatorProps> = ({
                   <div className="p-4 rounded-xl bg-blue-100 border border-blue-300 text-blue-900 text-sm">
                     <div className="font-bold mb-1">Calculation</div>
                     <div>
-                      Your total return on investment over three years, including all costs and savings.<br />
+                      Your cumulative net cash flow over three years as a percentage of the up-front implementation cost.<br />
                       <span className="block mt-2 font-mono text-sm bg-blue-50 rounded px-2 py-1">
-                        (Net annual savings × 3) ÷ (Total investment over 3 years) × 100<br />
-                        = ({formatCurrency(netSavings)} × 3) ÷ ({formatCurrency(totalInvestment)} + {formatCurrency(year2Investment)} + {formatCurrency(year3Investment)}) × 100<br />
-                        = <b>{threeYearCumulativeROI}%</b>
+                        (Net annual savings × 3 − Implementation cost) ÷ Implementation cost × 100<br />
+                        = ({formatCurrency(netSavings)} × 3 − {formatCurrency(implementationCost)}) ÷ {formatCurrency(implementationCost)} × 100<br />
+                        = <b>{threeYearCumulativeROI === null ? "N/A" : `${threeYearCumulativeROI}%`}</b>
+                      </span>
+                      <span className="block mt-2 text-xs">
+                        Net annual savings already nets the Doozer subscription and any residual labour against gross labour value freed, so only the one-time implementation cost belongs in the denominator.
                       </span>
                     </div>
                   </div>
                   <div className="mt-4 p-4 rounded-xl bg-blue-100 border border-blue-300 text-blue-900 text-sm">
                     <div className="font-bold mb-1">What this means</div>
                     <div>
-                      This is your total return over 3 years, including all costs and savings.<br />
-                      For every $1 invested, you get back{" "}
+                      For every $1 invested up-front, you get back{" "}
                       <b>
-                        {totalInvestment + year2Investment + year3Investment > 0
-                          ? `$${(
-                              (totalInvestment + year2Investment + year3Investment + netSavings * 3) /
-                              (totalInvestment + year2Investment + year3Investment)
-                            ).toFixed(2)}`
-                          : "$1.00"}
+                        {roi.returnPerDollar3yr === null
+                          ? "N/A (no upfront investment)"
+                          : `$${roi.returnPerDollar3yr.toFixed(2)}`}
                       </b>{" "}
                       in value over 3 years.
                       <br />
-                      <span className="block mt-2">
-                        {threeYearCumulativeROI < 25
-                          ? "Below typical business ROI target for 3 years"
-                          : threeYearCumulativeROI < 100
-                          ? "Solid 3-year investment"
-                          : threeYearCumulativeROI < 200
-                          ? "Excellent 3-year investment"
-                          : "Outstanding 3-year investment"}
-                      </span>
+                      <span className="block mt-2">{roiBand(threeYearCumulativeROI)}</span>
                     </div>
                   </div>
                 </>
               }>
                 <div className="text-5xl font-bold text-green-600 mb-2">
-                  {threeYearCumulativeROI}%
+                  {threeYearCumulativeROI === null ? "N/A" : `${threeYearCumulativeROI}%`}
                 </div>
               </Tooltip>
               <div className="text-gray-500 text-lg mt-2">3-Year Cumulative ROI</div>
@@ -744,10 +781,10 @@ const ROICalculator: React.FC<ROICalculatorProps> = ({
                 <>
                   <div className="font-bold mb-1">Payback (Months)</div>
                   <div>
-                    How many months it will take for your savings to cover your initial investment.<br />
+                    How many months of net annual savings it takes to recoup the one-time implementation cost.<br />
                     <span className="block mt-2 font-mono text-sm bg-blue-100 rounded px-2 py-1">
-                      Total first-year investment ÷ (Net annual savings ÷ 12)<br />
-                      = {formatCurrency(totalInvestment)} ÷ ({formatCurrency(netSavings)} ÷ 12)<br />
+                      Implementation cost ÷ (Net annual savings ÷ 12)<br />
+                      = {formatCurrency(implementationCost)} ÷ ({formatCurrency(netSavings)} ÷ 12)<br />
                       = <b>{paybackPeriod > 0 ? paybackPeriod.toFixed(1) : "N/A"}</b>
                     </span>
                   </div>
@@ -801,93 +838,39 @@ const ROICalculator: React.FC<ROICalculatorProps> = ({
           
           {/* Three card display for 1, 2, 3 year ROI */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            {(() => {
-              const year2Investment = remainingCost + doozerCost;
-              const year3Investment = year2Investment;
-              const year1CumulativeROI =
-                totalInvestment > 0
-                  ? Math.round((netSavings / totalInvestment) * 100)
-                  : 0;
-              const year2CumulativeROI =
-                totalInvestment + year2Investment > 0
-                  ? Math.round(
-                      ((netSavings * 2) / (totalInvestment + year2Investment)) * 100
-                    )
-                  : 0;
-              const year3CumulativeROI =
-                totalInvestment + year2Investment + year3Investment > 0
-                  ? Math.round(
-                      ((netSavings * 3) /
-                        (totalInvestment + year2Investment + year3Investment)) *
-                        100
-                    )
-                  : 0;
-              return [
-                {
-                  label: "Year 1 ROI",
-                  value: year1CumulativeROI,
-                  tooltip: `Year 1 Cumulative ROI shows your return on investment at the end of the first year, after all costs and savings. Calculated as: Net annual savings ÷ (Remaining labor costs + Doozer subscription + Implementation cost) × 100 = ${formatCurrency(netSavings)} ÷ (${formatCurrency(remainingCost)} + ${formatCurrency(doozerCost)} + ${formatCurrency(implementationCost)}) × 100`
-                },
-                {
-                  label: "Year 2 ROI",
-                  value: year2CumulativeROI,
-                  tooltip: `Year 2 Cumulative ROI shows your total return on investment after two years, including all costs and savings. Calculated as: (Net annual savings × 2) ÷ (Year 1 investment + Year 2 investment) × 100 = (${formatCurrency(netSavings)} × 2) ÷ (${formatCurrency(totalInvestment)} + ${formatCurrency(year2Investment)}) × 100`
-                },
-                {
-                  label: "Year 3 ROI",
-                  value: year3CumulativeROI,
-                  tooltip: `Year 3 Cumulative ROI shows your total return on investment after three years, including all costs and savings. Calculated as: (Net annual savings × 3) ÷ (Year 1 + Year 2 + Year 3 investment) × 100 = (${formatCurrency(netSavings)} × 3) ÷ (${formatCurrency(totalInvestment)} + ${formatCurrency(year2Investment)} + ${formatCurrency(year3Investment)}) × 100`
-                }
-              ].map((card) => (
-                <div
-                  key={card.label}
-                  className="bg-yellow-50 rounded-lg p-4 text-center border border-yellow-200"
-                >
-                  <Tooltip content={
-                    <>
-                      <div className="font-bold mb-1">{card.label}</div>
-                      <div>
-                        {card.label === "Year 1 ROI" && (
-                          <>
-                            Your return on investment at the end of the first year, after all costs and savings.<br />
-                            <span className="block mt-2 font-mono text-sm bg-blue-100 rounded px-2 py-1">
-                              Net annual savings ÷ (Remaining labor costs + Doozer subscription + Implementation cost)<br />
-                              = {formatCurrency(netSavings)} ÷ ({formatCurrency(remainingCost)} + {formatCurrency(doozerCost)} + {formatCurrency(implementationCost)})<br />
-                              = <b>{card.value}%</b>
-                            </span>
-                          </>
-                        )}
-                        {card.label === "Year 2 ROI" && (
-                          <>
-                            Your total return on investment after two years, including all costs and savings.<br />
-                            <span className="block mt-2 font-mono text-sm bg-blue-100 rounded px-2 py-1">
-                              (Net annual savings × 2) ÷ (Year 1 investment + Year 2 investment)<br />
-                              = ({formatCurrency(netSavings)} × 2) ÷ ({formatCurrency(totalInvestment)} + {formatCurrency(year2Investment)})<br />
-                              = <b>{card.value}%</b>
-                            </span>
-                          </>
-                        )}
-                        {card.label === "Year 3 ROI" && (
-                          <>
-                            Your total return on investment after three years, including all costs and savings.<br />
-                            <span className="block mt-2 font-mono text-sm bg-blue-100 rounded px-2 py-1">
-                              (Net annual savings × 3) ÷ (Year 1 + Year 2 + Year 3 investment)<br />
-                              = ({formatCurrency(netSavings)} × 3) ÷ ({formatCurrency(totalInvestment)} + {formatCurrency(year2Investment)} + {formatCurrency(year3Investment)})<br />
-                              = <b>{card.value}%</b>
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </>
-                  }>
-                    <span className="text-2xl font-bold text-yellow-700 mb-1">
-                      {card.value}%
-                    </span>
-                  </Tooltip>
-                  <div className="text-xs text-gray-600 uppercase">{card.label}</div>
-                </div>
-              ));
-            })()}
+            {[
+              { label: "Year 1 ROI", n: 1, value: year1ROI },
+              { label: "Year 2 ROI", n: 2, value: year2ROI },
+              { label: "Year 3 ROI", n: 3, value: year3ROI },
+            ].map((card) => (
+              <div
+                key={card.label}
+                className="bg-yellow-50 rounded-lg p-4 text-center border border-yellow-200"
+              >
+                <Tooltip content={
+                  <>
+                    <div className="font-bold mb-1">{card.label}</div>
+                    <div>
+                      Your cumulative net cash flow after {card.n} year{card.n > 1 ? "s" : ""} as a percentage of the up-front implementation cost.<br />
+                      <span className="block mt-2 font-mono text-sm bg-blue-100 rounded px-2 py-1">
+                        (Net annual savings × {card.n} − Implementation cost) ÷ Implementation cost<br />
+                        = ({formatCurrency(netSavings)} × {card.n} − {formatCurrency(implementationCost)}) ÷ {formatCurrency(implementationCost)}<br />
+                        = <b>{card.value === null ? "N/A" : `${card.value}%`}</b>
+                      </span>
+                    </div>
+                  </>
+                }>
+                  <span
+                    className={`text-2xl font-bold mb-1 ${
+                      card.value !== null && card.value < 0 ? "text-red-700" : "text-yellow-700"
+                    }`}
+                  >
+                    {card.value === null ? "N/A" : `${card.value}%`}
+                  </span>
+                </Tooltip>
+                <div className="text-xs text-gray-600 uppercase">{card.label}</div>
+              </div>
+            ))}
           </div>
           
           {!hideBackButton && (
