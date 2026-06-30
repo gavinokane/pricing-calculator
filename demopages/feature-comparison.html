@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doozer AI — Plans & Feature Comparison</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { font-size: 2rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+        .header p { color: #64748b; font-size: 1.05rem; }
+
+        /* Tier overview cards */
+        .tiers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 48px; }
+        .tier-card {
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+            padding: 24px 20px; position: relative; display: flex; flex-direction: column;
+        }
+        .tier-card.popular { border-color: #2563eb; box-shadow: 0 8px 24px rgba(37, 99, 235, 0.15); }
+        .tier-card .badge {
+            position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+            background: #2563eb; color: #fff; font-size: 0.7rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 12px; border-radius: 999px;
+            white-space: nowrap;
+        }
+        .tier-card h3 { font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+        .tier-card .price { font-size: 1.6rem; font-weight: 800; color: #0f172a; }
+        .tier-card .price span { font-size: 0.9rem; font-weight: 500; color: #64748b; }
+        .tier-card .tagline { color: #64748b; font-size: 0.9rem; margin-top: 10px; flex: 1; }
+        .tier-card .cta {
+            margin-top: 18px; text-align: center; padding: 10px; border-radius: 8px;
+            font-weight: 600; font-size: 0.9rem; background: #f1f5f9; color: #334155;
+        }
+        .tier-card.popular .cta { background: #2563eb; color: #fff; }
+
+        /* Every plan includes */
+        .includes {
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+            padding: 24px; margin-bottom: 32px;
+        }
+        .includes h2 {
+            font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+            color: #64748b; margin-bottom: 16px;
+        }
+        .pills { display: flex; flex-wrap: wrap; gap: 8px; }
+        .pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: #eff6ff; color: #1d4ed8; font-size: 0.85rem; font-weight: 500;
+            padding: 6px 12px; border-radius: 999px;
+        }
+
+        /* Comparison table */
+        .table-wrap {
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+            padding: 24px; overflow-x: auto;
+        }
+        .table-wrap h2 { font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 18px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        thead th { padding: 14px 12px; border-bottom: 2px solid #e2e8f0; text-align: center; vertical-align: bottom; }
+        thead th:first-child { text-align: left; }
+        thead .tname { font-weight: 700; color: #0f172a; }
+        thead .tprice { font-size: 0.78rem; font-weight: 500; color: #64748b; }
+        thead .popular-col { background: #eff6ff; }
+        thead .popular-col .tname { color: #1d4ed8; }
+        thead .mini-badge {
+            display: inline-block; margin-top: 4px; background: #2563eb; color: #fff;
+            font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+            padding: 2px 8px; border-radius: 999px;
+        }
+        tbody td { padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: center; }
+        tbody td:first-child { text-align: left; color: #475569; }
+        tbody td.popular-col { background: #f8fbff; }
+        tr.group-row td {
+            background: #f8fafc; font-weight: 700; font-size: 0.72rem; text-transform: uppercase;
+            letter-spacing: 0.06em; color: #64748b; text-align: left; padding: 10px 12px;
+        }
+        .footnote { margin-top: 16px; font-size: 0.8rem; color: #94a3b8; }
+
+        @media (max-width: 860px) {
+            .tiers { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 520px) {
+            .tiers { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Plans &amp; Feature Comparison</h1>
+            <p>Choose the plan that scales with your AI automation.</p>
+        </div>
+
+        <!-- Tier overview -->
+        <div class="tiers">
+            <div class="tier-card">
+                <h3>Professional</h3>
+                <div class="price">$499<span>/mo</span></div>
+                <p class="tagline">For teams getting started with AI automation</p>
+                <div class="cta">Get Started</div>
+            </div>
+            <div class="tier-card">
+                <h3>Business</h3>
+                <div class="price">$1,900<span>/mo</span></div>
+                <p class="tagline">For growing teams scaling automation</p>
+                <div class="cta">Get Started</div>
+            </div>
+            <div class="tier-card popular">
+                <div class="badge">⭐ Most Popular</div>
+                <h3>Scale</h3>
+                <div class="price">$2,500<span>/mo</span></div>
+                <p class="tagline">For organisations running AI in production</p>
+                <div class="cta">Get Started</div>
+            </div>
+            <div class="tier-card">
+                <h3>Enterprise</h3>
+                <div class="price">Custom<span></span></div>
+                <p class="tagline">For large-scale, security-led deployments</p>
+                <div class="cta">Contact Sales</div>
+            </div>
+        </div>
+
+        <!-- Every plan includes -->
+        <div class="includes">
+            <h2>Every plan includes</h2>
+            <div class="pills">
+                <span class="pill">✓ Visual workflow builder</span>
+                <span class="pill">✓ 24+ step types</span>
+                <span class="pill">✓ Plan Mode</span>
+                <span class="pill">✓ Sub-workflows</span>
+                <span class="pill">✓ Human-in-the-Loop</span>
+                <span class="pill">✓ Scheduling</span>
+                <span class="pill">✓ Chat &amp; Build agents</span>
+                <span class="pill">✓ Knowledge / RAG</span>
+                <span class="pill">✓ MCP tools</span>
+                <span class="pill">✓ Document extraction</span>
+                <span class="pill">✓ AI Assistant</span>
+                <span class="pill">✓ API access</span>
+                <span class="pill">✓ Bring-Your-Own-LLM-Key</span>
+                <span class="pill">✓ RBAC</span>
+                <span class="pill">✓ Tenant secrets</span>
+            </div>
+        </div>
+
+        <!-- Comparison table -->
+        <div class="table-wrap">
+            <h2>Feature Comparison Matrix</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th><div class="tname">Professional</div><div class="tprice">$499/mo</div></th>
+                        <th><div class="tname">Business</div><div class="tprice">$1,900/mo</div></th>
+                        <th class="popular-col">
+                            <div class="tname">Scale ⭐</div>
+                            <div class="tprice">$2,500/mo</div>
+                            <div class="mini-badge">Most Popular</div>
+                        </th>
+                        <th><div class="tname">Enterprise</div><div class="tprice">Custom</div></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="group-row"><td colspan="5">Usage</td></tr>
+                    <tr><td>Operations / month</td><td>150,000</td><td>750,000</td><td class="popular-col">3,000,000</td><td>Unlimited</td></tr>
+                    <tr><td>Overage per 1,000 ops</td><td>$3.00</td><td>$2.00</td><td class="popular-col">$1.50</td><td>$1.00 (negotiated)</td></tr>
+                    <tr><td>Concurrent runs</td><td>5</td><td>25</td><td class="popular-col">60</td><td>150+</td></tr>
+
+                    <tr class="group-row"><td colspan="5">Capacity</td></tr>
+                    <tr><td>Workspaces (tenants)</td><td>2</td><td>5</td><td class="popular-col">15</td><td>Unlimited</td></tr>
+                    <tr><td>AI Workers (agents)</td><td>5</td><td>20</td><td class="popular-col">75</td><td>Unlimited</td></tr>
+                    <tr><td>Knowledge bases</td><td>5</td><td>50</td><td class="popular-col">250</td><td>Unlimited</td></tr>
+                    <tr><td>Document extraction schemas</td><td>3</td><td>25</td><td class="popular-col">100</td><td>Unlimited</td></tr>
+                    <tr><td>Document pages / month</td><td>1,000</td><td>5,000</td><td class="popular-col">20,000</td><td>Custom</td></tr>
+                    <tr><td>Connections</td><td>5</td><td>25</td><td class="popular-col">100</td><td>Unlimited</td></tr>
+                    <tr><td>Storage (vector + file)</td><td>25 GB</td><td>250 GB</td><td class="popular-col">1 TB</td><td>Custom</td></tr>
+
+                    <tr class="group-row"><td colspan="5">Features</td></tr>
+                    <tr><td>Browser Automation</td><td>❌</td><td>✅</td><td class="popular-col">✅</td><td>✅</td></tr>
+                    <tr><td>SSO &amp; Custom Domain</td><td>❌</td><td>❌</td><td class="popular-col">✅</td><td>✅</td></tr>
+
+                    <tr class="group-row"><td colspan="5">Support</td></tr>
+                    <tr><td>Support</td><td>Email</td><td>Priority Email</td><td class="popular-col">Priority + Chat</td><td>24/7 Dedicated SLA</td></tr>
+                    <tr><td>Uptime SLA</td><td>99.5%</td><td>99.7%</td><td class="popular-col">99.9%</td><td>99.95%</td></tr>
+                    <tr><td>Onboarding</td><td>Self-serve</td><td>Guided</td><td class="popular-col">White-glove</td><td>Dedicated CSM</td></tr>
+                    <tr><td>Dedicated infrastructure</td><td>❌</td><td>❌</td><td class="popular-col">❌</td><td>Option</td></tr>
+                </tbody>
+            </table>
+            <p class="footnote">Enterprise is custom-priced (from ~$5,000/mo). Contact Sales for a tailored quote.</p>
+        </div>
+    </div>
+</body>
+</html>
